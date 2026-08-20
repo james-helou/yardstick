@@ -23,9 +23,10 @@ let directClient: postgres.Sql | null = null;
 /**
  * A direct, unpooled connection with a single socket.
  *
- * Neon's pooler cannot run DDL reliably and rejects `channel_binding`, so migrations and
- * anything schema-level must go through the unpooled host. Falls back to DATABASE_URL
- * locally, where there is no pooler and the two are the same database.
+ * Some managed Postgres poolers cannot run DDL reliably (Neon, for one, also rejects
+ * `channel_binding`), so migrations and anything schema-level go through the unpooled
+ * host when one is configured. Falls back to DATABASE_URL where there is no separate
+ * pooler and the two are the same database, which is the case on Railway and locally.
  */
 export function directDb(): postgres.Sql {
   if (directClient) return directClient;

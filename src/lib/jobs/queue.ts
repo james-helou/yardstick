@@ -145,6 +145,22 @@ export async function failJob(id: string, error: string): Promise<Job | null> {
   return rows.length ? toJob(rows[0]) : null;
 }
 
+/**
+ * Fails a job permanently, ignoring attempts remaining. For failures that retrying
+ * cannot fix — an unknown job kind, a malformed payload — where burning five attempts
+ * only delays the moment someone notices.
+ */
+export async function buryJob(id: string, error: string): Promise<Job | null> {
+  const rows = await db()<JobRow[]>`
+    update jobs
+       set status = 'failed', locked_by = null, locked_at = null,
+           last_error = ${error}, updated_at = now()
+     where id = ${id}
+    returning *
+  `;
+  return rows.length ? toJob(rows[0]) : null;
+}
+
 /** A worker that died mid-job leaves a row stuck in `running`. Cron calls this. */
 export async function reapStuckJobs(options: { olderThanMs: number }): Promise<number> {
   const rows = await db()<{ id: string }[]>`
