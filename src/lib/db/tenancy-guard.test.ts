@@ -13,6 +13,7 @@ import { describe, expect, it } from "vitest";
 const TENANT_TABLE_OWNERS: Record<string, string> = {
   memberships: "src/lib/db/repos/orgs.ts",
   jobs: "src/lib/jobs/queue.ts",
+  businesses: "src/lib/db/repos/businesses.ts",
 };
 
 const SRC = path.join(process.cwd(), "src");
@@ -60,7 +61,8 @@ describe("tenancy guard", () => {
     const declared = new Set<string>();
     for (const file of (await readdir(MIGRATIONS)).filter((f) => f.endsWith(".sql"))) {
       const body = await readFile(path.join(MIGRATIONS, file), "utf8");
-      for (const match of body.matchAll(/create table (\w+)\s*\(([\s\S]*?)\n\);/g)) {
+      const DECLARATION = /create table (?:if not exists\s+)?(\w+)\s*\(([\s\S]*?)\n\);/g;
+      for (const match of body.matchAll(DECLARATION)) {
         if (/\borg_id\b/.test(match[2])) declared.add(match[1]);
       }
     }
