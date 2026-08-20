@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "rankproof",
+  title: "Yardstick",
   description: "Proof that local SEO work moved the needle.",
 };
 

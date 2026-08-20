@@ -1,1 +1,1 @@
-export const APP_NAME = "rankproof";
+export const APP_NAME = "Yardstick";
