@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { resetTables } from "@/test/db";
+import { createTestUser, resetTables } from "@/test/db";
 import { addMembership, createOrg, findOrgBySlug, listMemberships } from "./repos/orgs";
 import { requireOrg } from "./scope";
 
@@ -34,8 +34,8 @@ describe("org repository", () => {
   it("never returns rows belonging to another org", async () => {
     const a = await createOrg({ name: "Agency A", slug: "agency-a" });
     const b = await createOrg({ name: "Agency B", slug: "agency-b" });
-    await addMembership({ orgId: a.id }, { userId: "11111111-1111-1111-1111-111111111111", role: "owner" });
-    await addMembership({ orgId: b.id }, { userId: "22222222-2222-2222-2222-222222222222", role: "owner" });
+    await addMembership({ orgId: a.id }, { userId: await createTestUser("a@x.test"), role: "owner" });
+    await addMembership({ orgId: b.id }, { userId: await createTestUser("b@x.test"), role: "owner" });
 
     const fromB = await listMemberships({ orgId: b.id });
     expect(fromB).toHaveLength(1);

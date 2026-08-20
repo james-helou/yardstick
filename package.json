@@ -11,10 +11,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "verify": "npm run typecheck && npm run lint && npm run test && npm run build",
-    "db:migrate": "node --env-file-if-exists=.env.local --import tsx scripts/migrate.ts"
+    "db:migrate": "node --env-file-if-exists=.env.local --import tsx scripts/migrate.ts",
+    "auth:schema": "node --env-file-if-exists=.env.local --import tsx scripts/generate-auth-schema.ts"
   },
   "dependencies": {
+    "better-auth": "^1.7.1",
     "next": "16.3.1",
+    "pg": "^8.23.0",
     "postgres": "^3.4.9",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -26,6 +29,7 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.1.0",

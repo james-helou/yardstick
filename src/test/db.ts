@@ -10,3 +10,16 @@ export async function resetTables(): Promise<void> {
   const list = rows.map((r) => `public."${r.tablename}"`).join(", ");
   await db().unsafe(`truncate ${list} restart identity cascade`);
 }
+
+/**
+ * Inserts a bare identity row. Memberships now carry a real foreign key to `user`,
+ * so tests that only care about org scoping still need a genuine user to point at.
+ */
+export async function createTestUser(email: string): Promise<string> {
+  const rows = await db()<{ id: string }[]>`
+    insert into "user" ("name", "email", "emailVerified", "updatedAt")
+    values (${email}, ${email}, false, now())
+    returning id
+  `;
+  return rows[0].id;
+}

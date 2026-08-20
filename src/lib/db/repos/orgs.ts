@@ -67,6 +67,19 @@ export async function addMembership(
   return toMembership(rows[0]);
 }
 
+export async function findMembership(
+  scope: OrgScope,
+  userId: string,
+): Promise<Membership | null> {
+  const orgId = requireOrg(scope);
+  const rows = await db()<MembershipRow[]>`
+    select id, org_id, user_id, role, created_at
+      from memberships
+     where org_id = ${orgId} and user_id = ${userId}
+  `;
+  return rows.length ? toMembership(rows[0]) : null;
+}
+
 export async function listMemberships(scope: OrgScope): Promise<Membership[]> {
   const orgId = requireOrg(scope);
   const rows = await db()<MembershipRow[]>`
