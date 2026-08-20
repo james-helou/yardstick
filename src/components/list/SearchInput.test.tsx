@@ -23,6 +23,27 @@ describe("SearchInput", () => {
     expect(onSearch).toHaveBeenCalledWith("acme");
   });
 
+  it("still fires when the parent re-renders during the debounce window", () => {
+    // The router-bound wrapper builds a new callback whenever the URL object changes.
+    // If the debounce restarts on that, a list that re-renders every 300ms never
+    // searches at all, which is exactly what happened in the browser.
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const onSearch = vi.fn();
+    const { rerender } = render(<SearchInput label="Search" onSearch={() => onSearch("stale")} delayMs={300} />);
+    const input = screen.getByRole("searchbox");
+
+    fireEvent.change(input, { target: { value: "acme" } });
+    for (let i = 0; i < 5; i += 1) {
+      act(() => vi.advanceTimersByTime(100));
+      rerender(<SearchInput label="Search" onSearch={(term) => onSearch(term)} delayMs={300} />);
+    }
+    act(() => vi.advanceTimersByTime(300));
+
+    expect(onSearch).toHaveBeenCalledTimes(1);
+    // The newest callback runs, not the one captured when the user started typing.
+    expect(onSearch).toHaveBeenCalledWith("acme");
+  });
+
   it("fires again for a genuinely new term", () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     const onSearch = vi.fn();

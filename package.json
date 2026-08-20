@@ -15,7 +15,8 @@
     "auth:schema": "node --env-file-if-exists=.env.local --import tsx scripts/generate-auth-schema.ts",
     "worker": "node --import tsx scripts/worker.ts",
     "worker:dev": "node --env-file-if-exists=.env.local --import tsx scripts/worker.ts",
-    "queue:smoke": "node --import tsx scripts/queue-smoke.ts"
+    "queue:smoke": "node --import tsx scripts/queue-smoke.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "better-auth": "^1.7.1",
@@ -27,6 +28,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^7.0.1",
