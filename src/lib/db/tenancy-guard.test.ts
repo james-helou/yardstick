@@ -19,6 +19,8 @@ const TENANT_TABLE_OWNERS: Record<string, string> = {
   credits_ledger: "src/lib/db/repos/credits.ts",
   grid_points: "src/lib/db/repos/grid.ts",
   ai_probes: "src/lib/db/repos/ai-probes.ts",
+  report_links: "src/lib/db/repos/reports.ts",
+  report_views: "src/lib/db/repos/reports.ts",
 };
 
 /**
@@ -28,6 +30,13 @@ const TENANT_TABLE_OWNERS: Record<string, string> = {
  * decides it is correct and says why here.
  */
 const ALLOWED_READS: Record<string, { table: string; because: string }[]> = {
+  "src/lib/db/repos/reports.ts": [
+    {
+      table: "scans",
+      because:
+        "sharing a scan inserts by selecting from scans under the same org_id, which is what makes a scan in another workspace produce no link at all",
+    },
+  ],
   "src/lib/db/repos/scans.ts": [
     {
       table: "businesses",

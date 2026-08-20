@@ -1,32 +1,36 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { AiAnswers, GridMap, PillarCard, ScoreBadge } from "@/components/scan";
+import { ScanReport, ScoreBadge } from "@/components/scan";
 import { resolveWorkspace } from "@/lib/auth/workspace";
 import { listAiProbes } from "@/lib/db/repos/ai-probes";
 import { listGridPoints } from "@/lib/db/repos/grid";
+import { countReportViews, getReportLink } from "@/lib/db/repos/reports";
 import { getScan, latestPillarResults } from "@/lib/db/repos/scans";
-import { PILLARS } from "@/lib/scans/pillars";
-import { topOpportunities, type PillarOutcome } from "@/lib/scans/score";
+import { absoluteUrl } from "@/lib/http/origin";
+import type { PillarOutcome } from "@/lib/scans/score";
 import { ScanProgress } from "../ScanProgress";
+import { ShareReport } from "../ShareReport";
 import { SCAN_STATUS_LABEL } from "../page";
 
 export const dynamic = "force-dynamic";
 
 export default async function ScanPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { scope } = await resolveWorkspace(await headers());
+  const requestHeaders = await headers();
+  const { scope } = await resolveWorkspace(requestHeaders);
 
   const scan = await getScan(scope, id);
   // A scan in another workspace does not exist here, same as a business.
   if (!scan) notFound();
 
-  const [results, gridPoints, aiProbes] = await Promise.all([
+  const [results, gridPoints, aiProbes, link, views] = await Promise.all([
     latestPillarResults(scope, id),
     listGridPoints(scope, id),
     listAiProbes(scope, { scanId: id }),
+    getReportLink(scope, id),
+    countReportViews(scope, id),
   ]);
-  const byPillar = new Map(results.map((r) => [r.pillar, r]));
 
   const outcomes: PillarOutcome[] = results.map((r) => ({
     pillar: r.pillar,
@@ -36,7 +40,6 @@ export default async function ScanPage({ params }: { params: Promise<{ id: strin
     ...(r.detail === null ? {} : { detail: r.detail }),
   }));
 
-  const opportunities = topOpportunities(outcomes);
   const done = scan.status === "complete" || scan.status === "failed";
 
   return (
@@ -61,42 +64,15 @@ export default async function ScanPage({ params }: { params: Promise<{ id: strin
         ) : null}
       </div>
 
-      {opportunities.length > 0 ? (
-        <div>
-          <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-neutral-500">
-            Fix these first
-          </h2>
-          <ol className="flex flex-col gap-2 text-sm">
-            {opportunities.map((finding) => (
-              <li key={finding.code} className="rounded border border-neutral-200 px-3 py-2">
-                <span className="font-medium">{finding.label}</span>
-                {finding.detail ? <span className="text-neutral-600"> · {finding.detail}</span> : null}
-              </li>
-            ))}
-          </ol>
-        </div>
+      {done ? (
+        <ShareReport
+          scanId={id}
+          url={link && link.revokedAt === null ? absoluteUrl(requestHeaders, `/r/${link.token}`) : null}
+          views={views}
+        />
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {PILLARS.map((pillar) => {
-          const result = byPillar.get(pillar);
-          return (
-            <div key={pillar} className="flex flex-col gap-3">
-              <PillarCard
-                pillar={pillar}
-                status={result?.status ?? "pending"}
-                score={result?.score ?? null}
-                findings={result?.findings ?? []}
-                detail={result?.detail ?? null}
-              />
-              {pillar === "geogrid" && gridPoints.length > 0 ? (
-                <GridMap points={gridPoints} keyword={gridPoints[0].keyword} />
-              ) : null}
-              {pillar === "ai_visibility" ? <AiAnswers answers={aiProbes} /> : null}
-            </div>
-          );
-        })}
-      </div>
+      <ScanReport outcomes={outcomes} gridPoints={gridPoints} aiProbes={aiProbes} />
     </section>
   );
 }
