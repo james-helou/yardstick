@@ -8,6 +8,7 @@
  * database rather than a mock.
  */
 import { closeDb, db } from "../src/lib/db/client";
+import { creditBalance, grantCredits } from "../src/lib/db/repos/credits";
 import { latestPillarResults } from "../src/lib/db/repos/scans";
 import { startScan } from "../src/lib/scans/runner";
 
@@ -22,6 +23,10 @@ async function main() {
   const scope = { orgId: org.id };
 
   try {
+    // Granted so the paid pillar reaches its provider check. Without this the ledger
+    // refuses it first and the run says nothing about whether rank data is configured.
+    await grantCredits(scope, { amount: 5, reason: "Smoke grant" });
+
     const [business] = await sql<{ id: string }[]>`
       insert into businesses (org_id, name, website_url)
       values (${org.id}, 'Scan smoke subject', ${TARGET})
@@ -43,7 +48,7 @@ async function main() {
       await new Promise((r) => setTimeout(r, 2000));
     }
 
-    console.log(`status=${status} score=${score ?? "none"}`);
+    console.log(`status=${status} score=${score ?? "none"} credits=${await creditBalance(scope)}`);
     for (const pillar of await latestPillarResults(scope, scan!.id)) {
       console.log(
         `  ${pillar.pillar}: ${pillar.status} score=${pillar.score ?? "none"}${pillar.detail ? ` (${pillar.detail})` : ""}`,
@@ -56,6 +61,7 @@ async function main() {
   } finally {
     // orgs cascades to businesses, scans, pillar_results and jobs.
     await sql`delete from jobs where org_id = ${org.id}`;
+    await sql`delete from credits_ledger where org_id = ${org.id}`;
     await sql`delete from orgs where id = ${org.id}`;
     console.log("cleaned up");
     await closeDb();
