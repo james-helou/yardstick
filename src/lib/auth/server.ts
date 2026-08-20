@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { nextCookies } from "better-auth/next-js";
 import { Pool } from "pg";
 import { env } from "@/lib/env";
 
@@ -35,6 +36,9 @@ export function authOptions(database: Pool = authPool()) {
       e.GOOGLE_CLIENT_ID && e.GOOGLE_CLIENT_SECRET
         ? { google: { clientId: e.GOOGLE_CLIENT_ID, clientSecret: e.GOOGLE_CLIENT_SECRET } }
         : {},
+    // Forwards Set-Cookie out of a server action into Next's cookie store. Must stay
+    // last: the plugin wraps everything registered before it.
+    plugins: [nextCookies()],
   };
 }
 
