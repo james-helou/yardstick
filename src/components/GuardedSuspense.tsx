@@ -42,25 +42,20 @@ function SectionError({ label, onRetry }: { label: string; onRetry: () => void }
 }
 
 /**
- * The fallback owns the deadline. While it is mounted the data has not arrived;
- * when the data arrives React unmounts it and the cleanup cancels the timer.
- * A skeleton therefore cannot outlive its own deadline.
+ * Renders nothing. Its only job is to report that the boundary's contents committed.
+ *
+ * It sits INSIDE the Suspense boundary, so it cannot mount until the content it is
+ * paired with has arrived — including the case where the content arrives from a
+ * server stream long after hydration.
  */
-function DeadlineFallback({
-  timeoutMs,
-  onDeadline,
-  children,
-}: {
-  timeoutMs: number;
-  onDeadline: () => void;
-  children: ReactNode;
-}) {
+function ResolvedSignal({ onResolved }: { onResolved: () => void }) {
   useEffect(() => {
-    const timer = setTimeout(onDeadline, timeoutMs);
-    return () => clearTimeout(timer);
-  }, [timeoutMs, onDeadline]);
-  return children;
+    onResolved();
+  }, [onResolved]);
+  return null;
 }
+
+type Status = "pending" | "resolved" | "timedOut";
 
 export type GuardedSuspenseProps = {
   /** Names the section in the error message, so the reader knows what failed. */
@@ -74,6 +69,12 @@ export type GuardedSuspenseProps = {
  * Suspense with two guarantees the bare version does not give you: a render error
  * becomes a visible, retryable message, and a pending state that runs past its
  * deadline does too. A shimmer that never resolves is a bug, not a loading state.
+ *
+ * The deadline lives here, in the component that always mounts, rather than in the
+ * fallback. During hydration React keeps the server-rendered fallback markup and
+ * never mounts a client fallback component, so a timer owned by the fallback would
+ * never start for the one case that matters most: a boundary that was already
+ * pending when the HTML was streamed.
  */
 export function GuardedSuspense({
   label,
@@ -82,28 +83,32 @@ export function GuardedSuspense({
   children,
 }: GuardedSuspenseProps) {
   const [attempt, setAttempt] = useState(0);
-  const [timedOut, setTimedOut] = useState(false);
+  const [status, setStatus] = useState<Status>("pending");
 
   const retry = useCallback(() => {
-    setTimedOut(false);
+    setStatus("pending");
     setAttempt((n) => n + 1);
   }, []);
 
-  // Stable, so a parent re-render cannot silently restart the deadline.
-  const onDeadline = useCallback(() => setTimedOut(true), []);
+  // Child effects run before parent effects, so content that is already present at
+  // hydration reports itself resolved before the timer below is ever armed.
+  const onResolved = useCallback(() => {
+    setStatus((current) => (current === "pending" ? "resolved" : current));
+  }, []);
 
-  if (timedOut) return <SectionError label={label} onRetry={retry} />;
+  useEffect(() => {
+    if (status !== "pending") return;
+    const timer = setTimeout(() => setStatus("timedOut"), timeoutMs);
+    return () => clearTimeout(timer);
+  }, [status, timeoutMs, attempt]);
+
+  if (status === "timedOut") return <SectionError label={label} onRetry={retry} />;
 
   return (
     <RenderErrorBoundary key={attempt} label={label} onRetry={retry}>
-      <Suspense
-        fallback={
-          <DeadlineFallback timeoutMs={timeoutMs} onDeadline={onDeadline}>
-            {fallback}
-          </DeadlineFallback>
-        }
-      >
+      <Suspense fallback={fallback}>
         {children}
+        <ResolvedSignal onResolved={onResolved} />
       </Suspense>
     </RenderErrorBoundary>
   );
