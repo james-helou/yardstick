@@ -2,7 +2,7 @@ import { env } from "@/lib/env";
 import { googlePlaces } from "./google";
 import type { PlacesProvider } from "./types";
 
-export type { PlaceCandidate, PlacesProvider, PlacesSearch } from "./types";
+export type { PlaceCandidate, PlaceDetails, PlaceReview, PlacesProvider, PlacesSearch } from "./types";
 export { parsePlaceCandidate, placeCandidateSchema } from "./types";
 export { placeToBusinessInput } from "./map";
 

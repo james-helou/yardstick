@@ -14,6 +14,24 @@ const TENANT_TABLE_OWNERS: Record<string, string> = {
   memberships: "src/lib/db/repos/orgs.ts",
   jobs: "src/lib/jobs/queue.ts",
   businesses: "src/lib/db/repos/businesses.ts",
+  scans: "src/lib/db/repos/scans.ts",
+  pillar_results: "src/lib/db/repos/scans.ts",
+};
+
+/**
+ * Reviewed exceptions: a module that legitimately reads a table it does not own. Each
+ * entry is a promise that the join is filtered by the same org_id in the same statement.
+ * Writing it down is the point. A new cross-table read fails the build until someone
+ * decides it is correct and says why here.
+ */
+const ALLOWED_READS: Record<string, { table: string; because: string }[]> = {
+  "src/lib/db/repos/scans.ts": [
+    {
+      table: "businesses",
+      because:
+        "a scan is meaningless without the business it measured, and every join carries the same org_id filter",
+    },
+  ],
 };
 
 const SRC = path.join(process.cwd(), "src");
@@ -40,12 +58,24 @@ describe("tenancy guard", () => {
       const rel = path.relative(process.cwd(), file);
       const body = await readFile(file, "utf8");
       for (const [table, owner] of Object.entries(TENANT_TABLE_OWNERS)) {
-        if (rel !== owner && touches(body, table)) {
+        const allowed = ALLOWED_READS[rel]?.some((entry) => entry.table === table) ?? false;
+        if (rel !== owner && !allowed && touches(body, table)) {
           offenders.push(`${rel} queries ${table} (owned by ${owner})`);
         }
       }
     }
     expect(offenders).toEqual([]);
+  });
+
+  it("every allowed cross-table read is scoped and explained", async () => {
+    for (const [rel, entries] of Object.entries(ALLOWED_READS)) {
+      const body = await readFile(path.join(process.cwd(), rel), "utf8");
+      for (const entry of entries) {
+        expect(entry.because.length, `${rel} must say why it reads ${entry.table}`).toBeGreaterThan(20);
+        // An exception is only defensible if the module scopes every query it makes.
+        expect(body).toContain("requireOrg(scope)");
+      }
+    }
   });
 
   it("every owning module takes an explicit org scope", async () => {

@@ -7,8 +7,11 @@ const DATABASE_URL = process.env.E2E_DATABASE_URL ?? "postgres://localhost:5432/
  * End to end against a real server and a real database, on its own port and its own
  * database so a run can never touch development data.
  */
+process.env.DATABASE_URL = DATABASE_URL;
+
 export default defineConfig({
   testDir: "./e2e",
+  globalSetup: "./e2e/global-setup.ts",
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,

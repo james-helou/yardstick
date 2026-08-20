@@ -1,7 +1,8 @@
 import { callExternal, ExternalCallError, type CallOptions } from "@/lib/external/call";
-import type { PlaceCandidate, PlacesProvider, PlacesSearch } from "./types";
+import type { PlaceCandidate, PlaceDetails, PlacesProvider, PlacesSearch } from "./types";
 
 const ENDPOINT = "https://places.googleapis.com/v1/places:searchText";
+const ENDPOINT_DETAILS = "https://places.googleapis.com/v1/places";
 const PROVIDER = "google-places";
 
 /**
@@ -18,6 +19,28 @@ const FIELD_MASK = [
   "places.internationalPhoneNumber",
 ].join(",");
 
+/**
+ * Details is the expensive call and returns the fields a scan actually grades on, so it
+ * asks for more than search does. Still explicit: no `*`.
+ */
+const DETAILS_FIELD_MASK = [
+  "id",
+  "displayName",
+  "addressComponents",
+  "location",
+  "primaryTypeDisplayName",
+  "types",
+  "websiteUri",
+  "internationalPhoneNumber",
+  "businessStatus",
+  "rating",
+  "userRatingCount",
+  "reviews",
+  "regularOpeningHours.weekdayDescriptions",
+  "editorialSummary",
+  "photos",
+].join(",");
+
 const DEFAULT_LIMIT = 10;
 
 export class PlacesRequestError extends ExternalCallError {
@@ -31,6 +54,22 @@ export class PlacesRequestError extends ExternalCallError {
 }
 
 type GoogleComponent = { longText?: string; shortText?: string; types?: string[] };
+
+type GoogleDetails = GooglePlace & {
+  businessStatus?: string;
+  types?: string[];
+  rating?: number;
+  userRatingCount?: number;
+  reviews?: {
+    rating?: number;
+    publishTime?: string;
+    text?: { text?: string };
+    authorAttribution?: { displayName?: string };
+  }[];
+  regularOpeningHours?: { weekdayDescriptions?: string[] };
+  editorialSummary?: { text?: string };
+  photos?: unknown[];
+};
 
 type GooglePlace = {
   id?: string;
@@ -81,6 +120,33 @@ export function toCandidate(place: GooglePlace): PlaceCandidate | null {
     ...maybe("primaryCategory", place.primaryTypeDisplayName?.text?.trim() || undefined),
     ...maybe("websiteUrl", place.websiteUri?.trim() || undefined),
     ...maybe("phone", place.internationalPhoneNumber?.trim() || undefined),
+  };
+}
+
+/** The details response on top of everything search already gives us. */
+export function toDetails(place: GoogleDetails): PlaceDetails | null {
+  const candidate = toCandidate(place);
+  if (!candidate) return null;
+
+  const reviews = (place.reviews ?? [])
+    .filter((r) => typeof r.rating === "number")
+    .map((r) => ({
+      rating: r.rating as number,
+      ...maybe("publishedAt", r.publishTime),
+      ...maybe("text", r.text?.text),
+      ...maybe("authorName", r.authorAttribution?.displayName),
+    }));
+
+  return {
+    ...candidate,
+    ...maybe("businessStatus", place.businessStatus),
+    ...maybe("categories", place.types),
+    ...maybe("rating", place.rating),
+    ...maybe("reviewCount", place.userRatingCount),
+    ...(reviews.length > 0 ? { reviews } : {}),
+    ...maybe("openingHours", place.regularOpeningHours?.weekdayDescriptions),
+    ...maybe("description", place.editorialSummary?.text?.trim() || undefined),
+    ...maybe("photoCount", place.photos?.length),
   };
 }
 
@@ -144,6 +210,37 @@ export function googlePlaces({ apiKey, fetchImpl = fetch, call }: GooglePlacesOp
       );
 
       return (payload.places ?? []).map(toCandidate).filter((c): c is PlaceCandidate => c !== null);
+    },
+
+    async details(placeId: string, options = {}): Promise<PlaceDetails | null> {
+      const payload = await callExternal(
+        async (innerSignal) => {
+          const response = await fetchImpl(`${ENDPOINT_DETAILS}/${encodeURIComponent(placeId)}`, {
+            method: "GET",
+            headers: { "X-Goog-Api-Key": apiKey, "X-Goog-FieldMask": DETAILS_FIELD_MASK },
+            signal: innerSignal,
+          });
+
+          // A listing that has been removed is an answer, not a failure. The scan
+          // records it as a finding and carries on with the other pillars.
+          if (response.status === 404) return null;
+
+          if (!response.ok) {
+            const detail = await response
+              .json()
+              .then((json: { error?: { message?: string } }) => json?.error?.message)
+              .catch(() => undefined);
+            throw new PlacesRequestError(
+              response.status,
+              `Places details failed with ${response.status}${detail ? `: ${detail}` : ""}`,
+            );
+          }
+          return (await response.json()) as GoogleDetails;
+        },
+        { name: PROVIDER, isRetryable, signal: options.signal, ...call },
+      );
+
+      return payload ? toDetails(payload) : null;
     },
   };
 }

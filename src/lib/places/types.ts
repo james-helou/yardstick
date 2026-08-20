@@ -34,6 +34,31 @@ export function parsePlaceCandidate(raw: unknown): PlaceCandidate | null {
   return parsed.success ? parsed.data : null;
 }
 
+/**
+ * Everything the details lookup returns on top of a search result. Search is cheap and
+ * shallow; details is the expensive call, so it is only made when a scan needs it.
+ */
+export type PlaceDetails = PlaceCandidate & {
+  rating?: number;
+  reviewCount?: number;
+  /** Newest first, as the provider ordered them. */
+  reviews?: PlaceReview[];
+  /** One string per weekday, as the provider phrases it. */
+  openingHours?: string[];
+  description?: string;
+  photoCount?: number;
+  /** "OPERATIONAL", "CLOSED_TEMPORARILY", and friends. */
+  businessStatus?: string;
+  categories?: string[];
+};
+
+export type PlaceReview = {
+  rating: number;
+  publishedAt?: string;
+  text?: string;
+  authorName?: string;
+};
+
 export type PlacesSearch = {
   query: string;
   /** Bias results toward a point. A local search for "dentist" is meaningless without one. */
@@ -49,4 +74,6 @@ export type PlacesSearch = {
 export interface PlacesProvider {
   readonly name: string;
   search(input: PlacesSearch): Promise<PlaceCandidate[]>;
+  /** Null when the listing has gone. A scan treats that as a finding, not an error. */
+  details(placeId: string, options?: { signal?: AbortSignal }): Promise<PlaceDetails | null>;
 }

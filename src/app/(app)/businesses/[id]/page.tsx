@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { ScoreBadge } from "@/components/scan";
 import { resolveWorkspace } from "@/lib/auth/workspace";
 import { getBusiness } from "@/lib/db/repos/businesses";
+import { listScans, SCAN_LIST_SPEC, type ScanSort } from "@/lib/db/repos/scans";
+import { parseListQuery } from "@/lib/list/query";
+import { runScanAction } from "../../scans/actions";
+import { RunScanButton } from "../../scans/RunScanButton";
+import { SCAN_STATUS_LABEL } from "../../scans/page";
 import { updateBusinessAction } from "../actions";
 import { BusinessForm } from "../BusinessForm";
 
@@ -19,6 +25,12 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
   // so gives away nothing about what other workspaces hold.
   if (!business) notFound();
 
+  const { rows: scans } = await listScans(
+    scope,
+    parseListQuery<ScanSort>({}, SCAN_LIST_SPEC),
+    { businessId: business.id },
+  );
+
   const place = [business.addressLine, business.locality, business.region, business.postalCode, business.country]
     .filter(Boolean)
     .join(", ");
@@ -34,6 +46,34 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
           {STATUS_LABEL[business.status]}
           {place ? ` · ${place}` : ""}
         </p>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500">Scans</h2>
+          <RunScanButton businessId={business.id} action={runScanAction} />
+        </div>
+
+        {scans.length === 0 ? (
+          <p className="text-sm text-neutral-600">
+            No scans yet. A scan grades the Google profile, the reviews and the website, and takes
+            about a minute.
+          </p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200">
+            {scans.map((scan) => (
+              <li key={scan.id} className="flex items-center justify-between gap-4 px-4 py-3">
+                <div>
+                  <Link href={`/scans/${scan.id}`} className="text-sm font-medium hover:underline">
+                    {scan.createdAt.toISOString().slice(0, 16).replace("T", " ")}
+                  </Link>
+                  <p className="text-xs text-neutral-600">{SCAN_STATUS_LABEL[scan.status]}</p>
+                </div>
+                <ScoreBadge score={scan.score} />
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div>

@@ -116,3 +116,65 @@ describe("googlePlaces", () => {
     expect(results).toHaveLength(1);
   });
 });
+
+const DETAILS = {
+  ...RESPONSE.places[0],
+  businessStatus: "OPERATIONAL",
+  types: ["dentist", "health"],
+  rating: 4.7,
+  userRatingCount: 212,
+  reviews: [
+    {
+      rating: 5,
+      publishTime: "2026-08-01T10:00:00Z",
+      text: { text: "Excellent" },
+      authorAttribution: { displayName: "A. Tremblay" },
+    },
+    { publishTime: "2026-07-01T10:00:00Z" },
+  ],
+  regularOpeningHours: { weekdayDescriptions: ["Monday: 9 AM to 5 PM"] },
+  editorialSummary: { text: " Dental clinic in Montreal " },
+  photos: [{}, {}, {}, {}],
+};
+
+describe("googlePlaces.details", () => {
+  it("returns everything a scan grades on", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(DETAILS));
+    const details = await googlePlaces({ apiKey: "k", fetchImpl, call: fast }).details("ChIJ_dental");
+
+    expect(details).toMatchObject({
+      placeId: "ChIJ_dental",
+      name: "Bright Smile Dental",
+      rating: 4.7,
+      reviewCount: 212,
+      openingHours: ["Monday: 9 AM to 5 PM"],
+      description: "Dental clinic in Montreal",
+      photoCount: 4,
+      businessStatus: "OPERATIONAL",
+      categories: ["dentist", "health"],
+    });
+    // The undated, unrated second review is dropped rather than counted as a zero.
+    expect(details?.reviews).toEqual([
+      { rating: 5, publishedAt: "2026-08-01T10:00:00Z", text: "Excellent", authorName: "A. Tremblay" },
+    ]);
+
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("https://places.googleapis.com/v1/places/ChIJ_dental");
+    expect(init.method).toBe("GET");
+    expect(init.headers["X-Goog-FieldMask"]).toContain("reviews");
+  });
+
+  it("treats a listing that has been removed as an answer, not a failure", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ error: { message: "not found" } }, 404));
+    await expect(
+      googlePlaces({ apiKey: "k", fetchImpl, call: fast }).details("gone"),
+    ).resolves.toBeNull();
+  });
+
+  it("still raises a rejected key", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ error: { message: "bad key" } }, 403));
+    await expect(
+      googlePlaces({ apiKey: "bad", fetchImpl, call: fast }).details("ChIJ_dental"),
+    ).rejects.toBeInstanceOf(PlacesRequestError);
+  });
+});
