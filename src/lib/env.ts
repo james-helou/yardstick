@@ -16,6 +16,11 @@ const schema = z.object({
   /** Places import stays dormant without a key, since every call is billed. */
   GOOGLE_PLACES_API_KEY: z.string().min(1).optional(),
 
+  /** AI visibility. Dormant without a key, since every probe is a paid completion. */
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  /** Which assistant we are measuring. Stamped on every stored probe. */
+  ANTHROPIC_MODEL: z.string().min(1).default("claude-sonnet-5"),
+
   /** Rank data. Both halves or nothing: the grid pillar reports itself unmeasured. */
   DATAFORSEO_LOGIN: z.string().min(1).optional(),
   DATAFORSEO_PASSWORD: z.string().min(1).optional(),

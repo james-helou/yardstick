@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { parseListQuery, type ListQuery } from "@/lib/list/query";
+import { PILLARS } from "@/lib/scans/pillars";
 import type { PillarOutcome } from "@/lib/scans/score";
 import { resetTables } from "@/test/db";
 import { createBusiness } from "./businesses";
@@ -94,17 +95,20 @@ describe("scans repository", () => {
     expect(await finalizeScan(scope, scan.id)).toBeNull();
 
     await recordPillarResult(scope, { scanId: scan.id, outcome: outcome("geogrid", 80) });
+    expect(await finalizeScan(scope, scan.id)).toBeNull();
+
+    await recordPillarResult(scope, { scanId: scan.id, outcome: outcome("ai_visibility", 50) });
     const finished = await finalizeScan(scope, scan.id);
     expect(finished?.status).toBe("complete");
-    // 0.3*90 + 0.25*60 + 0.2*40 + 0.25*80 = 70
-    expect(finished?.score).toBe(70);
+    // 0.27*90 + 0.22*60 + 0.16*40 + 0.22*80 + 0.13*50 = 68
+    expect(finished?.score).toBe(68);
     expect(finished?.finishedAt).toBeInstanceOf(Date);
   });
 
   it("finalises once even when every pillar finishes at the same moment", async () => {
     const { scope, business } = await workspace("Agency A");
     const scan = (await createScan(scope, { businessId: business.id }))!;
-    for (const p of ["gbp", "reputation", "site_health", "geogrid"] as const) {
+    for (const p of PILLARS) {
       await recordPillarResult(scope, { scanId: scan.id, outcome: outcome(p, 80) });
     }
 
@@ -123,7 +127,7 @@ describe("scans repository", () => {
   it("fails a scan where nothing could be measured, rather than scoring it zero", async () => {
     const { scope, business } = await workspace("Agency A");
     const scan = (await createScan(scope, { businessId: business.id }))!;
-    for (const p of ["gbp", "reputation", "site_health", "geogrid"] as const) {
+    for (const p of PILLARS) {
       await recordPillarResult(scope, {
         scanId: scan.id,
         outcome: { pillar: p, status: "skipped", findings: [], detail: "not configured" },
@@ -140,15 +144,15 @@ describe("scans repository", () => {
     const scan = (await createScan(scope, { businessId: business.id }))!;
     await recordPillarResult(scope, { scanId: scan.id, outcome: outcome("gbp", 90) });
     await recordPillarResult(scope, { scanId: scan.id, outcome: outcome("site_health", 40) });
-    for (const pillar of ["reputation", "geogrid"] as const) {
+    for (const pillar of ["reputation", "geogrid", "ai_visibility"] as const) {
       await recordPillarResult(scope, {
         scanId: scan.id,
         outcome: { pillar, status: "skipped", findings: [], detail: "Places is not configured" },
       });
     }
 
-    // (0.3*90 + 0.2*40) / 0.5
-    expect((await finalizeScan(scope, scan.id))?.score).toBe(70);
+    // (0.27*90 + 0.16*40) / 0.43 = 71.4
+    expect((await finalizeScan(scope, scan.id))?.score).toBe(71);
   });
 
   it("starts the clock once, however many pillars call it", async () => {

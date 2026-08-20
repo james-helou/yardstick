@@ -1,3 +1,4 @@
+import { aiProvider } from "@/lib/ai";
 import { placesProvider } from "@/lib/places";
 import { rankProvider } from "@/lib/rank";
 import { scanHandlers } from "@/lib/scans/runner";
@@ -13,5 +14,5 @@ import type { JobHandlers } from "./worker";
  * an error.
  */
 export const handlers: JobHandlers = {
-  ...scanHandlers({ places: placesProvider(), ranks: rankProvider() }),
+  ...scanHandlers({ places: placesProvider(), ranks: rankProvider(), ai: aiProvider() }),
 };

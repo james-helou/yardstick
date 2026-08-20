@@ -1,3 +1,7 @@
+import { placeLabel, type AiProvider } from "@/lib/ai";
+import { runPromptSet } from "@/lib/ai/probe";
+import { mapWithConcurrency } from "@/lib/concurrency";
+import { recordAiProbes, type AiProbeInput } from "@/lib/db/repos/ai-probes";
 import type { Business } from "@/lib/db/repos/businesses";
 import { getBusiness } from "@/lib/db/repos/businesses";
 import { refundCredits, spendCredits } from "@/lib/db/repos/credits";
@@ -18,6 +22,7 @@ import type { JobHandlers } from "@/lib/jobs/worker";
 import type { PlaceDetails, PlacesProvider } from "@/lib/places";
 import type { RankProvider } from "@/lib/rank";
 import { probeSite, type SiteProbe } from "@/lib/site/probe";
+import { scoreAiVisibility, type AiProbeOutcome } from "./ai-visibility";
 import { scoreGbpProfile } from "./gbp";
 import { scoreGeogrid } from "./geogrid";
 import { isPillar, PILLAR_CACHE_MS, PILLAR_COST, PILLAR_LABEL, PILLARS, type Pillar } from "./pillars";
@@ -33,20 +38,35 @@ export type ScanDeps = {
   places: PlacesProvider | null;
   /** Null without rank credentials. The grid then reports itself unmeasured. */
   ranks?: RankProvider | null;
+  /** Null without an AI key. The AI pillar then reports itself unmeasured. */
+  ai?: AiProvider | null;
   probe?: (url: string) => Promise<SiteProbe>;
   now?: () => Date;
   grid?: { radiusKm: number; size: number };
   /** Rank lookups run in parallel, but politely: a grid is dozens of paid calls. */
   gridConcurrency?: number;
+  aiConcurrency?: number;
 };
 
 type Target = Pick<
   Business,
-  "id" | "name" | "placeId" | "websiteUrl" | "latitude" | "longitude" | "primaryCategory"
+  | "id"
+  | "name"
+  | "placeId"
+  | "websiteUrl"
+  | "latitude"
+  | "longitude"
+  | "primaryCategory"
+  | "locality"
+  | "region"
 >;
 
 /** A pillar's answer, plus anything it wants stored alongside the score. */
-export type PillarRun = { outcome: PillarOutcome; gridPoints?: GridPointInput[] };
+export type PillarRun = {
+  outcome: PillarOutcome;
+  gridPoints?: GridPointInput[];
+  aiProbes?: AiProbeInput[];
+};
 
 export const targetOf = (business: Business): Target => ({
   id: business.id,
@@ -56,25 +76,9 @@ export const targetOf = (business: Business): Target => ({
   latitude: business.latitude,
   longitude: business.longitude,
   primaryCategory: business.primaryCategory,
+  locality: business.locality,
+  region: business.region,
 });
-
-/** Runs `fn` over the items, at most `limit` at a time, preserving order. */
-async function mapWithConcurrency<T, R>(
-  items: readonly T[],
-  limit: number,
-  fn: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const results = new Array<R>(items.length);
-  let next = 0;
-  const workers = Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, async () => {
-    while (next < items.length) {
-      const index = next++;
-      results[index] = await fn(items[index]);
-    }
-  });
-  await Promise.all(workers);
-  return results;
-}
 
 const skipped = (pillar: Pillar, detail: string): PillarOutcome => ({
   pillar,
@@ -118,7 +122,59 @@ export async function runPillar(pillar: Pillar, target: Target, deps: ScanDeps):
     return { outcome: scoreSiteHealth(await probe(target.websiteUrl)) };
   }
 
+  if (pillar === "ai_visibility") return runAiVisibility(target, deps);
+
   return runGeogrid(target, deps);
+}
+
+async function runAiVisibility(target: Target, deps: ScanDeps): Promise<PillarRun> {
+  if (!deps.ai) return { outcome: skipped("ai_visibility", "AI answers are not configured yet") };
+
+  const category = target.primaryCategory?.trim();
+  if (!category) {
+    return { outcome: skipped("ai_visibility", "Set a primary category to use as the search term") };
+  }
+
+  // Without a place the question is not a local question, and the answer would measure
+  // nothing: "who are the best plumbers" has no local winner to be absent from.
+  const place = placeLabel(target);
+  if (!place) {
+    return { outcome: skipped("ai_visibility", "Set a city or region so the question is a local one") };
+  }
+
+  const probes = await runPromptSet(
+    deps.ai,
+    { name: target.name, category, place },
+    { concurrency: deps.aiConcurrency ?? 2 },
+  );
+
+  const outcomes: AiProbeOutcome[] = probes.map((probe) => ({
+    key: probe.promptKey,
+    intent: probe.intent,
+    weight: probe.weight,
+    mentioned: probe.mentioned,
+    position: probe.position,
+    competitors: probe.competitors,
+  }));
+
+  const version = probes[0]?.promptSetVersion ?? "";
+  const model = probes[0]?.model ?? deps.ai.model;
+
+  return {
+    outcome: scoreAiVisibility(outcomes, { promptSetVersion: version, model }),
+    // The stored row drops intent and weight: those belong to the prompt set, which the
+    // version stamp can always be read back through.
+    aiProbes: probes.map((probe) => ({
+      promptSetVersion: probe.promptSetVersion,
+      promptKey: probe.promptKey,
+      prompt: probe.prompt,
+      model: probe.model,
+      response: probe.response,
+      mentioned: probe.mentioned,
+      position: probe.position,
+      competitors: probe.competitors,
+    })),
+  };
 }
 
 async function runGeogrid(target: Target, deps: ScanDeps): Promise<PillarRun> {
@@ -292,6 +348,10 @@ export function scanHandlers(deps: ScanDeps): JobHandlers {
 
       if (run.gridPoints?.length) {
         await recordGridPoints(scope, scanId, run.gridPoints);
+      }
+
+      if (run.aiProbes?.length) {
+        await recordAiProbes(scope, { scanId, businessId: business.id, probes: run.aiProbes });
       }
 
       // A pillar that was paid for and could not deliver gives the credit back. The

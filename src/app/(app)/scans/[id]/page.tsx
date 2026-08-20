@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { GridMap, PillarCard, ScoreBadge } from "@/components/scan";
+import { AiAnswers, GridMap, PillarCard, ScoreBadge } from "@/components/scan";
 import { resolveWorkspace } from "@/lib/auth/workspace";
+import { listAiProbes } from "@/lib/db/repos/ai-probes";
 import { listGridPoints } from "@/lib/db/repos/grid";
 import { getScan, latestPillarResults } from "@/lib/db/repos/scans";
 import { PILLARS } from "@/lib/scans/pillars";
@@ -20,9 +21,10 @@ export default async function ScanPage({ params }: { params: Promise<{ id: strin
   // A scan in another workspace does not exist here, same as a business.
   if (!scan) notFound();
 
-  const [results, gridPoints] = await Promise.all([
+  const [results, gridPoints, aiProbes] = await Promise.all([
     latestPillarResults(scope, id),
     listGridPoints(scope, id),
+    listAiProbes(scope, { scanId: id }),
   ]);
   const byPillar = new Map(results.map((r) => [r.pillar, r]));
 
@@ -90,6 +92,7 @@ export default async function ScanPage({ params }: { params: Promise<{ id: strin
               {pillar === "geogrid" && gridPoints.length > 0 ? (
                 <GridMap points={gridPoints} keyword={gridPoints[0].keyword} />
               ) : null}
+              {pillar === "ai_visibility" ? <AiAnswers answers={aiProbes} /> : null}
             </div>
           );
         })}

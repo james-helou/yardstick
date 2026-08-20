@@ -1,0 +1,23 @@
+{
+  "notes": "Businesses the AI visibility eval is run against. Public, unaffiliated, and picked to span the range: one that assistants know well, one mid-market, one that should be absent. Nothing here is a customer, and the harness only reads.",
+  "cases": [
+    {
+      "name": "Schwartz's Deli",
+      "category": "delicatessen",
+      "place": "Montreal, QC",
+      "expect": "named"
+    },
+    {
+      "name": "Clinique Dentaire Sainte-Catherine",
+      "category": "dentist",
+      "place": "Montreal, QC",
+      "expect": "either"
+    },
+    {
+      "name": "Yardstick Test Plumbing",
+      "category": "plumber",
+      "place": "Montreal, QC",
+      "expect": "absent"
+    }
+  ]
+}

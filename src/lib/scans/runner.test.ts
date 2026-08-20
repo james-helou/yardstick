@@ -10,6 +10,8 @@ import type { SiteProbe } from "@/lib/site/probe";
 import { resetTables } from "@/test/db";
 import { creditBalance, grantCredits, listCreditEntries } from "@/lib/db/repos/credits";
 import { listGridPoints } from "@/lib/db/repos/grid";
+import { CURRENT_PROMPT_SET, type AiProvider } from "@/lib/ai";
+import { listAiProbes } from "@/lib/db/repos/ai-probes";
 import type { RankProvider } from "@/lib/rank";
 import { describeAge, runPillar, scanHandlers, SCAN_PILLAR, SCAN_START, startScan } from "./runner";
 
@@ -46,6 +48,19 @@ const PROBE: SiteProbe = {
   structuredDataTypes: ["Dentist"],
 };
 
+/** A list that names the business first, which is the answer an agency is selling. */
+const AI_ANSWER = `Here are the best dentists in Montreal, QC:
+
+1. **Bright Smile Dental** - modern clinic downtown, well reviewed
+2. **Plateau Dental Care** - family practice on Mont-Royal
+3. Clinique Dentaire Rosemont: evenings and weekends`;
+
+const ai = (text: string = AI_ANSWER, model = "test-model"): AiProvider => ({
+  name: "fake-ai",
+  model,
+  ask: async () => ({ model, text }),
+});
+
 const places = (details: PlaceDetails | null = DETAILS): PlacesProvider => ({
   name: "fake-places",
   search: async () => [],
@@ -57,6 +72,7 @@ type WorkspaceOptions = {
   websiteUrl?: string | null;
   coordinates?: boolean;
   category?: string | null;
+  locality?: string | null;
   credits?: number;
 };
 
@@ -70,6 +86,7 @@ async function workspace(options: WorkspaceOptions = {}) {
     ...(options.websiteUrl === null ? {} : { websiteUrl: options.websiteUrl ?? "https://brightsmile.ca" }),
     ...(options.coordinates === false ? {} : { latitude: 45.5017, longitude: -73.5673 }),
     ...(options.category === null ? {} : { primaryCategory: options.category ?? "Dentist" }),
+    ...(options.locality === null ? {} : { locality: options.locality ?? "Montreal" }),
   });
   if (options.credits !== 0) {
     await grantCredits(scope, { amount: options.credits ?? 10, reason: "Test grant" });
@@ -86,6 +103,8 @@ const target = (over: Partial<Parameters<typeof runPillar>[1]> = {}) => ({
   latitude: 45.5017,
   longitude: -73.5673,
   primaryCategory: "Dentist",
+  locality: "Montreal",
+  region: "QC",
   ...over,
 });
 
@@ -208,6 +227,7 @@ describe("the scan pipeline", () => {
         places: places(),
         probe: async () => PROBE,
         ranks: ranksAt([1]),
+        ai: ai(),
         grid: { radiusKm: 2, size: 3 },
       }),
     );
@@ -219,9 +239,15 @@ describe("the scan pipeline", () => {
     expect(scan?.finishedAt).toBeInstanceOf(Date);
 
     const pillars = await latestPillarResults(scope, started!.id);
-    expect(pillars.map((p) => p.pillar).sort()).toEqual(["gbp", "geogrid", "reputation", "site_health"]);
-    // The grid was paid for out of the ledger.
-    expect(await creditBalance(scope)).toBe(9);
+    expect(pillars.map((p) => p.pillar).sort()).toEqual([
+      "ai_visibility",
+      "gbp",
+      "geogrid",
+      "reputation",
+      "site_health",
+    ]);
+    // Both paid pillars came out of the ledger, one credit each.
+    expect(await creditBalance(scope)).toBe(8);
     expect(await listGridPoints(scope, started!.id)).toHaveLength(9);
   });
 
@@ -275,7 +301,7 @@ describe("the scan pipeline", () => {
   it("fans out exactly one job per pillar, even if the start job runs twice", async () => {
     const { scope, business } = await workspace();
     const started = await startScan(scope, { businessId: business.id });
-    const handlers = scanHandlers({ places: places(), probe: async () => PROBE });
+    const handlers = scanHandlers({ places: places(), probe: async () => PROBE, ai: ai() });
 
     const [startJob] = await claimJobs({ worker: "test", limit: 10 });
     expect(startJob.kind).toBe(SCAN_START);
@@ -284,8 +310,8 @@ describe("the scan pipeline", () => {
 
     const queued = await claimJobs({ worker: "test", limit: 50 });
     expect(queued.filter((j) => j.kind === SCAN_PILLAR)).toHaveLength(PILLARS.length);
-    // And the paid pillar was charged once, not once per dispatch.
-    expect(await creditBalance(scope)).toBe(9);
+    // And each paid pillar was charged once, not once per dispatch.
+    expect(await creditBalance(scope)).toBe(8);
     expect(started).not.toBeNull();
   });
 
@@ -369,15 +395,19 @@ describe("credits and caching", () => {
     };
 
     const started = await startScan(scope, { businessId: business.id });
-    await drain(scanHandlers({ places: places(), probe: async () => PROBE, ranks, grid: { radiusKm: 2, size: 3 } }), 12);
+    await drain(
+      scanHandlers({ places: places(), probe: async () => PROBE, ranks, ai: ai(), grid: { radiusKm: 2, size: 3 } }),
+      12,
+    );
 
     const grid = (await latestPillarResults(scope, started!.id)).find((p) => p.pillar === "geogrid");
     expect(grid?.status).toBe("failed");
     expect(grid?.detail).toBe("rank provider is down");
 
-    expect(await creditBalance(scope)).toBe(10);
+    // Two pillars were charged, and only the one that failed was given back.
+    expect(await creditBalance(scope)).toBe(9);
     const ledger = await listCreditEntries(scope);
-    expect(ledger.map((e) => e.delta)).toEqual([1, -1, 10]);
+    expect(ledger.map((e) => e.delta)).toEqual([1, -1, -1, 10]);
     expect(ledger[0].reason).toMatch(/could not be measured/);
   });
 
@@ -392,7 +422,77 @@ describe("credits and caching", () => {
     const scan = await getScan(scope, started!.id);
     expect(scan?.status).toBe("running");
     expect(scan?.finishedAt).toBeNull();
-    // The refused pillar already has its answer; the other three are still queued.
-    expect(await latestPillarResults(scope, started!.id)).toHaveLength(1);
+    // The two refused pillars already have their answer; the free three are still queued.
+    expect(await latestPillarResults(scope, started!.id)).toHaveLength(2);
+  });
+});
+
+describe("the AI visibility pillar", () => {
+  it("reports itself skipped, with a reason, when no AI key is configured", async () => {
+    const { outcome } = await runPillar("ai_visibility", target(), { places: null, ai: null });
+    expect(outcome).toMatchObject({ status: "skipped", detail: "AI answers are not configured yet" });
+  });
+
+  it("refuses to ask a question with no place in it", async () => {
+    const { outcome } = await runPillar("ai_visibility", target({ locality: null, region: null }), {
+      places: null,
+      ai: ai(),
+    });
+    expect(outcome).toMatchObject({
+      status: "skipped",
+      detail: "Set a city or region so the question is a local one",
+    });
+  });
+
+  it("needs a category, since the category is the question", async () => {
+    const { outcome } = await runPillar("ai_visibility", target({ primaryCategory: null }), {
+      places: null,
+      ai: ai(),
+    });
+    expect(outcome.detail).toBe("Set a primary category to use as the search term");
+  });
+
+  it("scores the answers and hands back a probe per prompt", async () => {
+    const run = await runPillar("ai_visibility", target(), { places: null, ai: ai() });
+
+    expect(run.outcome.status).toBe("ok");
+    expect(run.outcome.score).toBeGreaterThan(80);
+    expect(run.aiProbes).toHaveLength(CURRENT_PROMPT_SET.prompts.length);
+    // The rows carry the two stamps that make a score comparable later.
+    expect(run.aiProbes?.every((p) => p.promptSetVersion === CURRENT_PROMPT_SET.version)).toBe(true);
+    expect(run.aiProbes?.every((p) => p.model === "test-model")).toBe(true);
+  });
+
+  it("stores every answer verbatim against the scan that asked", async () => {
+    const { scope, business } = await workspace();
+    const started = await startScan(scope, { businessId: business.id });
+    await drain(scanHandlers({ places: null, ai: ai() }));
+
+    const probes = await listAiProbes(scope, { scanId: started!.id });
+    expect(probes).toHaveLength(CURRENT_PROMPT_SET.prompts.length);
+    expect(probes[0].response).toContain("Bright Smile Dental");
+    expect(probes.find((p) => p.promptKey === "best")?.position).toBe(1);
+    expect(probes.find((p) => p.promptKey === "best")?.competitors).toContain("Plateau Dental Care");
+  });
+
+  it("gives the credit back when the assistant could not be reached", async () => {
+    const { scope, business } = await workspace();
+    const broken: AiProvider = {
+      name: "broken",
+      model: "test-model",
+      ask: async () => {
+        throw new Error("the assistant is down");
+      },
+    };
+
+    const started = await startScan(scope, { businessId: business.id });
+    await drain(scanHandlers({ places: null, ai: broken }), 12);
+
+    const pillar = (await latestPillarResults(scope, started!.id)).find((p) => p.pillar === "ai_visibility");
+    expect(pillar?.status).toBe("failed");
+    expect(pillar?.detail).toBe("the assistant is down");
+    // Charged once for the grid it could not run either, and both were given back.
+    expect(await creditBalance(scope)).toBe(10);
+    expect(await listAiProbes(scope, { scanId: started!.id })).toEqual([]);
   });
 });
