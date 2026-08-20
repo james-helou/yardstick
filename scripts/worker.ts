@@ -4,7 +4,8 @@
  * This is the shape the job queue was designed for: claim, run, repeat, in a process
  * that can take three minutes over a scan without anything timing out.
  */
-import { closeDb } from "../src/lib/db/client";
+import { closeDb, closeDirectDb } from "../src/lib/db/client";
+import { migrate } from "../src/lib/db/migrate";
 import { handlers } from "../src/lib/jobs/handlers";
 import { reapStuckJobs } from "../src/lib/jobs/queue";
 import { runOnce } from "../src/lib/jobs/worker";
@@ -30,6 +31,13 @@ process.on("SIGINT", () => requestShutdown("SIGINT"));
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
+  // The worker and the web service boot in whatever order Railway feels like, so the
+  // worker cannot assume the schema is already there. migrate() takes an advisory lock,
+  // so both running it at once is safe and the second one is a no-op.
+  const applied = await migrate();
+  if (applied.length > 0) console.log(`[worker] applied ${applied.length} migration(s)`);
+  await closeDirectDb();
+
   console.log(`[worker] ${WORKER_ID} started, ${Object.keys(handlers).length} handlers registered`);
   let lastReap = 0;
 
