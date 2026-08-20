@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { env, resetEnvCache } from "./env";
 
+beforeEach(() => resetEnvCache());
 afterEach(() => resetEnvCache());
 
 describe("env", () => {
