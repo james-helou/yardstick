@@ -12,6 +12,9 @@ const schema = z.object({
   /** Google sign-in stays dormant until both halves are present. */
   GOOGLE_CLIENT_ID: z.string().min(1).optional(),
   GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+
+  /** Places import stays dormant without a key, since every call is billed. */
+  GOOGLE_PLACES_API_KEY: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof schema>;
