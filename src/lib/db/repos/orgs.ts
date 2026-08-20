@@ -80,6 +80,21 @@ export async function findMembership(
   return rows.length ? toMembership(rows[0]) : null;
 }
 
+/**
+ * Every workspace a user belongs to, oldest first. Lives here because `memberships` has
+ * exactly one owning module, and this is a read across orgs rather than within one.
+ */
+export async function listOrgsForUser(userId: string): Promise<Org[]> {
+  const rows = await db()<OrgRow[]>`
+    select o.id, o.name, o.slug, o.created_at
+      from orgs o
+      join memberships m on m.org_id = o.id
+     where m.user_id = ${userId}
+     order by m.created_at asc
+  `;
+  return rows.map(toOrg);
+}
+
 export async function listMemberships(scope: OrgScope): Promise<Membership[]> {
   const orgId = requireOrg(scope);
   const rows = await db()<MembershipRow[]>`
