@@ -4,6 +4,7 @@ import { GuardedSuspense } from "@/components/GuardedSuspense";
 import { ListShell, SortableHeader, UrlSearchInput } from "@/components/list";
 import { ScoreBadge } from "@/components/scan";
 import { resolveWorkspace } from "@/lib/auth/workspace";
+import { creditBalance } from "@/lib/db/repos/credits";
 import { countScansByStatus, listScans, SCAN_LIST_SPEC, type ScanSort } from "@/lib/db/repos/scans";
 import { parseListQuery, toSearchParams, type SortDirection } from "@/lib/list/query";
 
@@ -23,9 +24,10 @@ async function ScanTable({ params }: { params: SearchParams }) {
   const { scope } = await resolveWorkspace(await headers());
   const query = parseListQuery<ScanSort>(params, SCAN_LIST_SPEC);
 
-  const [{ rows, window }, counts] = await Promise.all([
+  const [{ rows, window }, counts, credits] = await Promise.all([
     listScans(scope, query),
     countScansByStatus(scope),
+    creditBalance(scope),
   ]);
 
   const href = (next: Partial<typeof query>) => {
@@ -47,6 +49,7 @@ async function ScanTable({ params }: { params: SearchParams }) {
         { label: "Complete", value: String(counts.complete) },
         { label: "In flight", value: String(counts.queued + counts.running) },
         { label: "Nothing measured", value: String(counts.failed) },
+        { label: "Scan credits", value: String(credits) },
       ]}
     >
       <table className="w-full text-sm">

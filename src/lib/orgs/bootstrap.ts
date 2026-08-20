@@ -1,7 +1,11 @@
+import { grantCredits } from "@/lib/db/repos/credits";
 import { addMembership, createOrg, listOrgsForUser, type Org } from "@/lib/db/repos/orgs";
 import { slugify } from "./slug";
 
 const UNIQUE_VIOLATION = "23505";
+
+/** Enough paid scans to see the product work before anyone is asked to pay for it. */
+export const WELCOME_CREDITS = 25;
 const MAX_ATTEMPTS = 5;
 
 const isUniqueViolation = (error: unknown): boolean =>
@@ -41,6 +45,11 @@ export async function ensureWorkspaceForUser(userId: string, name: string): Prom
     try {
       const org = await createOrg({ name: displayName, slug });
       await addMembership({ orgId: org.id }, { userId, role: "owner" });
+      // Keyed on the org, so this cannot be granted twice however sign-up is retried.
+      await grantCredits(
+        { orgId: org.id },
+        { amount: WELCOME_CREDITS, reason: "Welcome grant", idempotencyKey: `welcome:${org.id}` },
+      );
       return org;
     } catch (error) {
       if (!isUniqueViolation(error)) throw error;

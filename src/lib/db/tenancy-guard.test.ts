@@ -16,6 +16,8 @@ const TENANT_TABLE_OWNERS: Record<string, string> = {
   businesses: "src/lib/db/repos/businesses.ts",
   scans: "src/lib/db/repos/scans.ts",
   pillar_results: "src/lib/db/repos/scans.ts",
+  credits_ledger: "src/lib/db/repos/credits.ts",
+  grid_points: "src/lib/db/repos/grid.ts",
 };
 
 /**

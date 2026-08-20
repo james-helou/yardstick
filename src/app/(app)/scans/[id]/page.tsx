@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { PillarCard, ScoreBadge } from "@/components/scan";
+import { GridMap, PillarCard, ScoreBadge } from "@/components/scan";
 import { resolveWorkspace } from "@/lib/auth/workspace";
+import { listGridPoints } from "@/lib/db/repos/grid";
 import { getScan, latestPillarResults } from "@/lib/db/repos/scans";
 import { PILLARS } from "@/lib/scans/pillars";
 import { topOpportunities, type PillarOutcome } from "@/lib/scans/score";
@@ -19,7 +20,10 @@ export default async function ScanPage({ params }: { params: Promise<{ id: strin
   // A scan in another workspace does not exist here, same as a business.
   if (!scan) notFound();
 
-  const results = await latestPillarResults(scope, id);
+  const [results, gridPoints] = await Promise.all([
+    latestPillarResults(scope, id),
+    listGridPoints(scope, id),
+  ]);
   const byPillar = new Map(results.map((r) => [r.pillar, r]));
 
   const outcomes: PillarOutcome[] = results.map((r) => ({
@@ -75,14 +79,18 @@ export default async function ScanPage({ params }: { params: Promise<{ id: strin
         {PILLARS.map((pillar) => {
           const result = byPillar.get(pillar);
           return (
-            <PillarCard
-              key={pillar}
-              pillar={pillar}
-              status={result?.status ?? "pending"}
-              score={result?.score ?? null}
-              findings={result?.findings ?? []}
-              detail={result?.detail ?? null}
-            />
+            <div key={pillar} className="flex flex-col gap-3">
+              <PillarCard
+                pillar={pillar}
+                status={result?.status ?? "pending"}
+                score={result?.score ?? null}
+                findings={result?.findings ?? []}
+                detail={result?.detail ?? null}
+              />
+              {pillar === "geogrid" && gridPoints.length > 0 ? (
+                <GridMap points={gridPoints} keyword={gridPoints[0].keyword} />
+              ) : null}
+            </div>
           );
         })}
       </div>

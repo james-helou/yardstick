@@ -10,7 +10,8 @@ const ok = (pillar: PillarOutcome["pillar"], score: number): PillarOutcome => ({
 
 describe("overallScore", () => {
   it("weights the pillars that ran", () => {
-    // 0.4 * 90 + 0.35 * 60 + 0.25 * 40 = 67
+    // The grid did not run, so the other three are renormalised over their own weights:
+    // (0.3 * 90 + 0.25 * 60 + 0.2 * 40) / 0.75 = 66.7
     const result = overallScore([ok("gbp", 90), ok("reputation", 60), ok("site_health", 40)]);
     expect(result.score).toBe(67);
     expect(result.unmeasured).toEqual([]);
@@ -24,7 +25,7 @@ describe("overallScore", () => {
       { pillar: "reputation", status: "skipped", findings: [], detail: "not configured" },
       ok("site_health", 40),
     ]);
-    expect(result.score).toBe(71); // (0.4*90 + 0.25*40) / 0.65
+    expect(result.score).toBe(70); // (0.3*90 + 0.2*40) / 0.5
     expect(result.measured).toEqual(["gbp", "site_health"]);
     expect(result.unmeasured).toEqual(["reputation"]);
   });

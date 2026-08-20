@@ -15,6 +15,7 @@ export type Scan = {
   requestedBy: string | null;
   startedAt: Date | null;
   finishedAt: Date | null;
+  expectedPillars: Pillar[];
   createdAt: Date;
 };
 
@@ -57,6 +58,7 @@ type ScanRow = {
   started_at: Date | null;
   finished_at: Date | null;
   created_at: Date;
+  expected_pillars?: string[] | null;
   business_name?: string;
 };
 
@@ -80,6 +82,7 @@ const toScan = (r: ScanRow): Scan => ({
   requestedBy: r.requested_by,
   startedAt: r.started_at ? new Date(r.started_at) : null,
   finishedAt: r.finished_at ? new Date(r.finished_at) : null,
+  expectedPillars: (r.expected_pillars ?? []) as Pillar[],
   createdAt: new Date(r.created_at),
 });
 
@@ -95,7 +98,7 @@ const toPillarResult = (r: PillarRow): PillarResult => ({
 });
 
 const SCAN_COLUMNS = `s.id, s.org_id, s.business_id, s.status, s.score, s.requested_by,
-  s.started_at, s.finished_at, s.created_at`;
+  s.started_at, s.finished_at, s.created_at, s.expected_pillars`;
 
 export async function createScan(
   scope: OrgScope,
@@ -109,7 +112,8 @@ export async function createScan(
     select ${orgId}, b.id, ${input.requestedBy ?? null}
       from businesses b
      where b.id = ${input.businessId} and b.org_id = ${orgId}
-    returning id, org_id, business_id, status, score, requested_by, started_at, finished_at, created_at
+    returning id, org_id, business_id, status, score, requested_by, started_at, finished_at,
+              created_at, expected_pillars
   `;
   return rows.length ? toScan(rows[0]) : null;
 }
@@ -167,6 +171,24 @@ export async function countScansByStatus(scope: OrgScope): Promise<Record<ScanSt
   const counts: Record<ScanStatus, number> = { queued: 0, running: 0, complete: 0, failed: 0 };
   for (const row of rows) counts[row.status] = Number(row.count);
   return counts;
+}
+
+/**
+ * Records which pillars this scan is waiting on. Written when the work is dispatched, so
+ * finalisation asks "have the pillars I actually started reported" rather than "have all
+ * the pillars this build knows about", which is what stops a new pillar from stranding a
+ * scan that is already running.
+ */
+export async function setExpectedPillars(
+  scope: OrgScope,
+  id: string,
+  pillars: readonly Pillar[],
+): Promise<void> {
+  const orgId = requireOrg(scope);
+  await db()`
+    update scans set expected_pillars = ${db().array([...pillars])}, updated_at = now()
+     where id = ${id} and org_id = ${orgId}
+  `;
 }
 
 /** Marks the clock started. Idempotent, so a retried first pillar does not reset it. */
@@ -232,7 +254,10 @@ export async function finalizeScan(scope: OrgScope, scanId: string): Promise<Sca
        where scan_id = ${scanId} and org_id = ${orgId}
        order by pillar, created_at desc, id desc
     `;
-    if (rows.length < PILLARS.length) return null;
+    // An older scan predates expected_pillars; fall back to everything this build knows.
+    const expected = scan.expected_pillars?.length ? scan.expected_pillars : [...PILLARS];
+    const reported = new Set(rows.map((r) => r.pillar));
+    if (expected.some((pillar) => !reported.has(pillar as Pillar))) return null;
 
     const outcomes: PillarOutcome[] = rows.map((r) => {
       const result = toPillarResult(r);
@@ -253,8 +278,36 @@ export async function finalizeScan(scope: OrgScope, scanId: string): Promise<Sca
       update scans s
          set status = ${status}, score = ${overall.score}, finished_at = now(), updated_at = now()
        where s.id = ${scanId} and s.org_id = ${orgId}
-      returning ${tx.unsafe(SCAN_COLUMNS)}
+      returning s.id, s.org_id, s.business_id, s.status, s.score, s.requested_by,
+                s.started_at, s.finished_at, s.created_at, s.expected_pillars
     `;
     return toScan(updated);
   });
+}
+
+/**
+ * The newest usable answer for this pillar on this business, from any earlier scan
+ * inside the window. This is what makes a re-run free: an expensive pillar hands back
+ * the recent answer instead of paying a provider for the same question twice.
+ */
+export async function cachedPillarResult(
+  scope: OrgScope,
+  input: { businessId: string; pillar: Pillar; withinMs: number },
+): Promise<PillarResult | null> {
+  const orgId = requireOrg(scope);
+  if (input.withinMs <= 0) return null;
+
+  const rows = await db()<PillarRow[]>`
+    select p.*
+      from pillar_results p
+      join scans s on s.id = p.scan_id
+     where p.org_id = ${orgId}
+       and s.business_id = ${input.businessId}
+       and p.pillar = ${input.pillar}
+       and p.status = 'ok'
+       and p.created_at > now() - make_interval(secs => ${input.withinMs / 1000})
+     order by p.created_at desc
+     limit 1
+  `;
+  return rows.length ? toPillarResult(rows[0]) : null;
 }

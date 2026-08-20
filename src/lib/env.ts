@@ -15,6 +15,10 @@ const schema = z.object({
 
   /** Places import stays dormant without a key, since every call is billed. */
   GOOGLE_PLACES_API_KEY: z.string().min(1).optional(),
+
+  /** Rank data. Both halves or nothing: the grid pillar reports itself unmeasured. */
+  DATAFORSEO_LOGIN: z.string().min(1).optional(),
+  DATAFORSEO_PASSWORD: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof schema>;
