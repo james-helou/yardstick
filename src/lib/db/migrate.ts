@@ -1,6 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { db } from "./client";
+import { directDb } from "./client";
 
 const MIGRATIONS_DIR = path.join(process.cwd(), "migrations");
 
@@ -8,7 +8,7 @@ const MIGRATIONS_DIR = path.join(process.cwd(), "migrations");
 const LOCK_KEY = 4_017_231_101;
 
 async function ensureLedger(): Promise<void> {
-  await db()`
+  await directDb()`
     create table if not exists schema_migrations (
       name        text primary key,
       applied_at  timestamptz not null default now()
@@ -18,7 +18,7 @@ async function ensureLedger(): Promise<void> {
 
 export async function appliedMigrations(): Promise<string[]> {
   await ensureLedger();
-  const rows = await db()<{ name: string }[]>`
+  const rows = await directDb()<{ name: string }[]>`
     select name from schema_migrations order by name
   `;
   return rows.map((r) => r.name);
@@ -27,7 +27,7 @@ export async function appliedMigrations(): Promise<string[]> {
 /** Applies every unapplied migration in filename order. Returns what it ran. */
 export async function migrate(): Promise<string[]> {
   await ensureLedger();
-  const sql = db();
+  const sql = directDb();
   await sql`select pg_advisory_lock(${LOCK_KEY})`;
   try {
     const done = new Set(await appliedMigrations());

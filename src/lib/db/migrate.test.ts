@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { db } from "./client";
 import { appliedMigrations } from "./migrate";
@@ -19,5 +20,11 @@ describe("migrations", () => {
   it("is idempotent when run again", async () => {
     const { migrate } = await import("./migrate");
     expect(await migrate()).toEqual([]);
+  });
+
+  it("runs migrations on the unpooled connection", async () => {
+    const source = await readFile(new URL("./migrate.ts", import.meta.url), "utf8");
+    expect(source).toContain("directDb()");
+    expect(source).not.toMatch(/\bdb\(\)/);
   });
 });
