@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Yardstick
 
-## Getting Started
+Local SEO diagnostics for agencies. Measure a prospect's visibility, show them the gap,
+and win the work.
 
-First, run the development server:
+Conventions live in `CLAUDE.md`. The reasoning behind the load-bearing decisions is in
+`docs/teardown-findings.md`. Current state and open items are in `.claude/HANDOFF.md`.
+
+## Local setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+createdb yardstick_dev && createdb yardstick_test
+cp .env.example .env.local        # point DATABASE_URL at yardstick_dev
+npm install
+npm run db:migrate
+npm run dev                       # http://localhost:3000
+npm run worker:dev                # the queue worker, in a second terminal
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Gates
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`npm run verify` runs typecheck, lint, tests, and build. All four must be green; the same
+command runs in CI on every push.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deployment
 
-## Learn More
+Railway project `yardstick`, three services from one image:
 
-To learn more about Next.js, take a look at the following resources:
+| Service | Role | Start |
+|---|---|---|
+| `web` | `SERVICE_ROLE=web` | migrates, then `next start` |
+| `worker` | `SERVICE_ROLE=worker` | claim / run / sleep loop |
+| `Postgres` | database | Railway managed |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Both application services deploy from `main` on push and share `DATABASE_URL` by
+reference. `docker-entrypoint.sh` picks the role, so the two can never drift out of sync.
