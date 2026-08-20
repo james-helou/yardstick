@@ -14,9 +14,7 @@
     "db:migrate": "node --env-file-if-exists=.env.local --import tsx scripts/migrate.ts",
     "auth:schema": "node --env-file-if-exists=.env.local --import tsx scripts/generate-auth-schema.ts",
     "worker": "node --import tsx scripts/worker.ts",
-    "worker:dev": "node --env-file-if-exists=.env.local --import tsx scripts/worker.ts",
-    "start:web": "npm run db:migrate:prod && next start",
-    "db:migrate:prod": "node --import tsx scripts/migrate.ts"
+    "worker:dev": "node --env-file-if-exists=.env.local --import tsx scripts/worker.ts"
   },
   "dependencies": {
     "better-auth": "^1.7.1",

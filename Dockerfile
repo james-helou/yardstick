@@ -25,5 +25,6 @@ COPY --from=build /app/package.json /app/next.config.ts /app/tsconfig.json ./
 COPY --from=build /app/src ./src
 COPY --from=build /app/scripts ./scripts
 COPY --from=build /app/migrations ./migrations
+COPY --from=build /app/docker-entrypoint.sh ./
 EXPOSE 3000
-CMD ["npm", "run", "start:web"]
+CMD ["./docker-entrypoint.sh"]
