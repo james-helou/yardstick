@@ -72,6 +72,19 @@ describe("band", () => {
   });
 });
 
+describe("checklistScore with something unmeasured", () => {
+  it("scores out of what was checked, not out of what was hoped for", () => {
+    // Two of three passed, and the third was never judged. That is 100%, not 67%.
+    expect(
+      checklistScore([
+        { code: "a", label: "a", ok: true, weight: 1 },
+        { code: "b", label: "b", ok: true, weight: 1 },
+        { code: "c", label: "c", ok: false, measured: false, weight: 1 },
+      ]),
+    ).toBe(100);
+  });
+});
+
 describe("topOpportunities", () => {
   it("puts the heaviest failures first and ignores what passed", () => {
     const outcomes: PillarOutcome[] = [

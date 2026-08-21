@@ -49,13 +49,28 @@ export function scoreGbpProfile(details: PlaceDetails): PillarOutcome {
       ok: has(details.description),
       weight: 1,
     },
-    {
-      code: "photos",
-      label: "At least three photos",
-      ok: (details.photoCount ?? 0) >= 3,
-      weight: 1,
-      detail: (details.photoCount ?? 0) >= 3 ? undefined : `${details.photoCount ?? 0} photos on the listing`,
-    },
+    // An absent photo array is not a claim of zero. Google withholds photos entirely on
+    // our key, and "0 photos on the listing" is a false statement about a business that
+    // has plenty, in a report the business is invited to check.
+    details.photoCount === undefined
+      ? {
+          code: "photos",
+          label: "At least three photos",
+          ok: false,
+          measured: false,
+          weight: 1,
+          detail: "Google did not return photos for this listing, so this is unjudged",
+        }
+      : {
+          code: "photos",
+          label: "At least three photos",
+          ok: details.photoCount >= 3,
+          weight: 1,
+          detail:
+            details.photoCount >= 3
+              ? undefined
+              : `${details.photoCount} photo${details.photoCount === 1 ? "" : "s"} on the listing`,
+        },
     {
       code: "operational",
       label: "Listing marked open",

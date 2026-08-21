@@ -44,11 +44,18 @@ export function roundScore(value: number): number {
   return clamp(Math.round(value), 0, 100);
 }
 
-/** A weighted checklist as a percentage. The shape every analyser reduces to. */
+/**
+ * A weighted checklist as a percentage. The shape every analyser reduces to.
+ *
+ * Anything `measured: false` leaves both sides of the fraction, so a checklist is scored
+ * out of what was actually checked. A check nobody could perform must not drag a score
+ * down, for the same reason an unmeasured pillar does not drag the overall down.
+ */
 export function checklistScore(findings: Finding[]): number {
-  const total = findings.reduce((sum, f) => sum + f.weight, 0);
+  const judged = findings.filter((f) => f.measured !== false);
+  const total = judged.reduce((sum, f) => sum + f.weight, 0);
   if (total === 0) return 0;
-  const earned = findings.reduce((sum, f) => sum + (f.ok ? f.weight : 0), 0);
+  const earned = judged.reduce((sum, f) => sum + (f.ok ? f.weight : 0), 0);
   return roundScore((earned / total) * 100);
 }
 

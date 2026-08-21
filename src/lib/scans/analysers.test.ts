@@ -36,6 +36,29 @@ describe("scoreGbpProfile", () => {
     expect(outcome.score).toBeLessThan(90);
   });
 
+  it("does not claim zero photos when Google withheld the field", () => {
+    const withheld: PlaceDetails = { ...COMPLETE };
+    delete withheld.photoCount;
+    const outcome = scoreGbpProfile(withheld);
+    const photos = outcome.findings.find((f) => f.code === "photos");
+
+    // Google returns no photo array at all on our key, and an absent field is not the
+    // same claim as an empty one. "0 photos on the listing" was a false statement about
+    // a business that has plenty.
+    expect(photos?.measured).toBe(false);
+    expect(photos?.detail).not.toContain("0 photos");
+    expect(outcome.score).toBe(100);
+  });
+
+  it("still counts photos when the provider actually sent some", () => {
+    const outcome = scoreGbpProfile({ ...COMPLETE, photoCount: 1 });
+    const photos = outcome.findings.find((f) => f.code === "photos");
+
+    expect(photos?.ok).toBe(false);
+    expect(photos?.measured).not.toBe(false);
+    expect(photos?.detail).toBe("1 photo on the listing");
+  });
+
   it("treats a listing Google marks closed as the finding it is", () => {
     const outcome = scoreGbpProfile({ ...COMPLETE, businessStatus: "CLOSED_TEMPORARILY" });
     const finding = outcome.findings.find((f) => f.code === "operational");
@@ -49,7 +72,10 @@ describe("scoreGbpProfile", () => {
 
   it("scores an empty profile near nothing without throwing", () => {
     const outcome = scoreGbpProfile({ placeId: "p2", name: "Corner Barber" });
-    expect(outcome.score).toBeLessThan(20);
+    // Three points of fifteen. Only "listing marked open" passes, and it passes on the
+    // absence of a closed flag rather than on evidence. Fifteen and not sixteen because
+    // photos cannot be judged when the provider sent no photo array at all.
+    expect(outcome.score).toBe(20);
     expect(outcome.status).toBe("ok");
   });
 });
