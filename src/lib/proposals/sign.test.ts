@@ -17,6 +17,8 @@ import {
   listProposalLines,
   sendProposal,
 } from "@/lib/db/repos/proposals";
+import { listEngagements, listWorkItems } from "@/lib/db/repos/engagements";
+import { ONBOARDING } from "@/lib/delivery/plan";
 import { money } from "@/lib/money";
 import { resetTables } from "@/test/db";
 import { openProposal, signProposal } from "./sign";
@@ -212,5 +214,48 @@ describe("signing", () => {
     // And it cannot reach in to pull the link either.
     expect(await revokeProposalLink(b.scope, a.proposalId)).toBe(false);
     expect(await getProposal(b.scope, a.proposalId)).toBeNull();
+  });
+});
+
+describe("what a signature sets in motion", () => {
+  it("generates the work the agency now owes", async () => {
+    const { scope, token } = await sentProposal();
+
+    expect(await signProposal({ token, decision: "accepted", ...signer })).toMatchObject({ ok: true });
+
+    const [engagement] = await listEngagements(scope);
+    expect(engagement.status).toBe("active");
+    expect(engagement.monthly).toEqual(cad(120_000));
+    expect(engagement.oneTime).toEqual(cad(150_000));
+
+    const items = await listWorkItems(scope, engagement.id);
+    // The four onboarding steps, the setup line, and the retainer that never finishes.
+    expect(items).toHaveLength(ONBOARDING.length + 2);
+    expect(items.map((item) => item.title)).toContain("Set up Setup");
+    expect(items.find((item) => item.kind === "recurring")!.dueAt).toBeNull();
+  });
+
+  it("owes nothing when the answer was no", async () => {
+    const { scope, token } = await sentProposal();
+    await signProposal({ token, decision: "declined", ...signer });
+    expect(await listEngagements(scope)).toEqual([]);
+  });
+
+  it("records the signature even when the checklist could not be generated", async () => {
+    const { scope, proposalId, token } = await sentProposal();
+
+    const result = await signProposal(
+      { token, decision: "accepted", ...signer },
+      {
+        startDelivery: async () => {
+          throw new Error("delivery is down");
+        },
+      },
+    );
+
+    // The promise is what matters. The list of what it implies can be rebuilt by hand.
+    expect(result).toMatchObject({ ok: true });
+    expect((await getProposal(scope, proposalId))!.status).toBe("accepted");
+    expect(await listEngagements(scope)).toEqual([]);
   });
 });

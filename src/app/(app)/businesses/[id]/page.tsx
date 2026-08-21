@@ -2,15 +2,23 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { ScoreBadge } from "@/components/scan";
+import { Checklist } from "@/components/delivery";
 import { ClientAccess, TrackingPanel, TrendPanel } from "@/components/tracking";
 import { resolveWorkspace } from "@/lib/auth/workspace";
 import { getBusiness } from "@/lib/db/repos/businesses";
 import { listGrantsForBusiness } from "@/lib/db/repos/portal";
+import { listEngagementsForBusiness, listWorkItems } from "@/lib/db/repos/engagements";
 import { getSchedule } from "@/lib/db/repos/schedules";
 import { listScans, SCAN_LIST_SPEC, type ScanSort } from "@/lib/db/repos/scans";
 import { absoluteUrl } from "@/lib/http/origin";
 import { trendFor } from "@/lib/tracking/history";
 import { parseListQuery } from "@/lib/list/query";
+import {
+  addWorkItemAction,
+  endEngagementAction,
+  reopenEngagementAction,
+  setWorkStatusAction,
+} from "../../clients/actions";
 import { runScanAction } from "../../scans/actions";
 import { RunScanButton } from "../../scans/RunScanButton";
 import { SCAN_STATUS_LABEL } from "../../scans/page";
@@ -45,11 +53,21 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
   );
 
   const requestHeaders = await headers();
-  const [schedule, trend, grants] = await Promise.all([
+  const [schedule, trend, grants, engagements] = await Promise.all([
     getSchedule(scope, business.id),
     trendFor(scope, business.id),
     listGrantsForBusiness(scope, business.id),
+    listEngagementsForBusiness(scope, business.id),
   ]);
+
+  // One query per engagement, and an agency has one or two per client, not hundreds.
+  const checklists = await Promise.all(
+    engagements.map(async (engagement) => ({
+      engagement,
+      items: await listWorkItems(scope, engagement.id),
+    })),
+  );
+  const now = new Date();
 
   const place = [business.addressLine, business.locality, business.region, business.postalCode, business.country]
     .filter(Boolean)
@@ -82,6 +100,19 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
           stop={stopTrackingAction}
         />
       </div>
+
+      {checklists.map(({ engagement, items }) => (
+        <Checklist
+          key={engagement.id}
+          engagement={engagement}
+          items={items}
+          now={now}
+          advance={setWorkStatusAction}
+          add={addWorkItemAction}
+          end={endEngagementAction}
+          reopen={reopenEngagementAction}
+        />
+      ))}
 
       <ClientAccess
         businessId={business.id}

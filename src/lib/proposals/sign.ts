@@ -15,6 +15,7 @@ import {
   quoteOf,
   type Proposal,
 } from "@/lib/db/repos/proposals";
+import { openEngagement } from "@/lib/db/repos/engagements";
 import { termsFingerprint } from "./fingerprint";
 
 /**
@@ -58,6 +59,8 @@ export type SignResult =
 
 export type SignDeps = {
   sendEmail?: typeof deliver;
+  /** Injected so a test can prove the checklist is generated without reaching a database. */
+  startDelivery?: typeof openEngagement;
   agencyEmails?: typeof listOrgNotificationEmails;
   /** Where the agency can open it again. Absent means no email goes out. */
   origin?: string | null;
@@ -113,6 +116,27 @@ export async function signProposal(input: SignInput, deps: SignDeps = {}): Promi
       ipHash: input.ipHash,
       userAgent: input.userAgent,
     });
+
+    // A signature is a promise, so the moment it lands the agency owes work. Best effort,
+    // like every other side effect here: the answer is already recorded, and the agency
+    // can generate the checklist by hand from the proposal if this did not run.
+    try {
+      const start = deps.startDelivery ?? openEngagement;
+      await start(scope, {
+        proposalId: proposal.id,
+        monthly: totals.monthly,
+        oneTime: totals.oneTime,
+        lines: lines.map((line) => ({
+          id: line.id,
+          name: line.name,
+          billing: line.billing,
+          quantity: line.quantity,
+        })),
+        signedAt: decided.decidedAt ?? new Date(),
+      });
+    } catch {
+      // Nothing here is worth losing a signature over.
+    }
   }
 
   await recordProposalEvent(scope, {

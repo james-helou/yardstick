@@ -32,6 +32,8 @@ const TENANT_TABLE_OWNERS: Record<string, string> = {
   proposal_signatures: "src/lib/db/repos/proposal-sharing.ts",
   scan_schedules: "src/lib/db/repos/schedules.ts",
   portal_grants: "src/lib/db/repos/portal.ts",
+  engagements: "src/lib/db/repos/engagements.ts",
+  work_items: "src/lib/db/repos/engagements.ts",
 };
 
 /**
@@ -72,6 +74,18 @@ const ALLOWED_READS: Record<string, { table: string; because: string }[]> = {
       table: "businesses",
       because:
         "an invitation is created by selecting from businesses under the same org_id, and a client's own list joins the business each grant names with the org_id carried on the grant itself",
+    },
+  ],
+  "src/lib/db/repos/engagements.ts": [
+    {
+      table: "proposals",
+      because:
+        "an engagement is opened by selecting from the accepted proposal under the same org_id, which is what makes a proposal in another workspace produce no engagement at all",
+    },
+    {
+      table: "businesses",
+      because:
+        "the portfolio reads as a list of client names, so it joins the business each engagement names, and every join carries the same org_id filter",
     },
   ],
   "src/lib/db/repos/schedules.ts": [
