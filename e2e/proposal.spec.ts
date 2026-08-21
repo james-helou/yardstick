@@ -66,3 +66,71 @@ test("an agency prices a deal from its catalogue and sending freezes the numbers
   await expect(page.getByRole("link", { name: "Local search, twelve months" })).toBeVisible();
   await expect(page.getByText("Not sent")).toHaveCount(0);
 });
+
+test("a client opens the link with no login, signs, and the agency sees the signature", async ({
+  page,
+  browser,
+}) => {
+  const run = Date.now();
+  const agency = {
+    agency: `Signworks ${run}`,
+    email: `e2e-sign-${run}@yardstick.test`,
+    password: "a-sufficiently-long-password",
+  };
+
+  await page.goto("/sign-up");
+  await page.getByLabel("Agency name").fill(agency.agency);
+  await page.getByLabel("Email").fill(agency.email);
+  await page.getByLabel("Password").fill(agency.password);
+  await page.getByRole("button", { name: "Create workspace" }).click();
+  await expect(page).toHaveURL(/\/businesses$/);
+
+  await page.getByRole("link", { name: "Proposals", exact: true }).click();
+  await page.getByRole("link", { name: "New proposal" }).first().click();
+  await page.getByLabel("Title").fill("Six months of local search");
+  await page.getByLabel("Term (months)").fill("6");
+  await page.getByRole("button", { name: "Start the proposal" }).click();
+
+  await page.getByLabel("What it is").fill("Retainer");
+  await page.getByLabel("Billing").selectOption("monthly");
+  await page.getByLabel("Price (CAD)").fill("900");
+  await page.getByRole("button", { name: "Add line" }).click();
+  await expect(page.getByRole("cell", { name: "Retainer" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Send it" }).click();
+  await expect(page.getByText("These totals were written when it was sent.")).toBeVisible();
+
+  // The link only exists once it is asked for, and it is shown in full so a rep can read
+  // it out loud as easily as paste it.
+  await page.getByRole("button", { name: "Create a signing link" }).click();
+  await expect(page.getByText("Not opened yet")).toBeVisible();
+  const url = (await page.getByRole("code").innerText()).trim();
+  expect(url).toMatch(/\/p\/[A-Za-z0-9_-]{32,}$/);
+
+  // A separate context, so there is provably no session behind this.
+  const client = await browser.newContext();
+  const clientPage = await client.newPage();
+  await clientPage.goto(url);
+
+  await expect(clientPage.getByRole("heading", { name: "Six months of local search" })).toBeVisible();
+  await expect(clientPage.getByText("Billed every month")).toBeVisible();
+  // Nothing from the agency's side leaks onto the client's page.
+  await expect(clientPage.getByRole("link", { name: "Proposals", exact: true })).toHaveCount(0);
+
+  await clientPage.getByLabel("Your full name").fill("Ana Rivera");
+  await clientPage.getByLabel("Email").fill("ana@rivera.example");
+  await clientPage.getByRole("button", { name: "Accept and sign" }).click();
+  await expect(clientPage.getByText("accepted these terms on")).toBeVisible();
+
+  // Pressing it again changes nothing: the form is gone and the signature stands.
+  await clientPage.reload();
+  await expect(clientPage.getByRole("button", { name: "Accept and sign" })).toHaveCount(0);
+  await client.close();
+
+  // And the agency sees who signed, that it was opened, and that the terms still match.
+  await page.reload();
+  await expect(page.getByText("Ana Rivera (ana@rivera.example)")).toBeVisible();
+  await expect(page.getByText("Still a match.")).toBeVisible();
+  await expect(page.getByText(/Opened \d+ time/)).toBeVisible();
+  await expect(page.getByText("Accepted", { exact: true })).toBeVisible();
+});

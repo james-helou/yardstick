@@ -1,5 +1,6 @@
 import { money, type Currency, type Money } from "@/lib/money";
 import { orderByFragment, pageWindow, type ListQuery, type PageWindow } from "@/lib/list/query";
+import { termsFingerprint } from "@/lib/proposals/fingerprint";
 import { quote, snapshotOf, type Billing, type Quote, type QuoteLine } from "@/lib/proposals/quote";
 import { db } from "../client";
 import { requireOrg, type OrgScope } from "../scope";
@@ -26,6 +27,8 @@ export type Proposal = {
   createdAt: Date;
   /** Written when it was sent. Null on a draft, which is recomputed from its lines. */
   totals: { oneTime: Money; monthly: Money; contractValue: Money } | null;
+  /** The terms as sent, hashed. What a signature is checked against. */
+  termsFingerprint: string | null;
 };
 
 export type ProposalLine = {
@@ -60,6 +63,7 @@ type Row = {
   contract_value: string | null;
   expires_at: Date | null;
   decided_at: Date | null;
+  terms_fingerprint: string | null;
   created_at: Date;
 };
 
@@ -97,6 +101,7 @@ const toProposal = (r: Row): Proposal => ({
   expiresAt: r.expires_at ? new Date(r.expires_at) : null,
   decidedAt: r.decided_at ? new Date(r.decided_at) : null,
   createdAt: new Date(r.created_at),
+  termsFingerprint: r.terms_fingerprint,
   totals:
     r.one_time_total === null || r.monthly_total === null || r.contract_value === null
       ? null
@@ -389,6 +394,9 @@ export async function sendProposal(
     const proposal = toProposal(row);
     const lines = lineRows.map((line) => toLine(line, row.currency));
     const snapshot = snapshotOf(quoteOf(proposal, lines));
+    // Computed here, once, from the same rows the totals came from. A signature later is
+    // checked against this and nothing else.
+    const fingerprint = termsFingerprint({ ...proposal, lines });
 
     const [sent] = await tx<Row[]>`
       update proposals set
@@ -397,6 +405,7 @@ export async function sendProposal(
         one_time_total = ${snapshot.oneTimeTotal},
         monthly_total = ${snapshot.monthlyTotal},
         contract_value = ${snapshot.contractValue},
+        terms_fingerprint = ${fingerprint},
         expires_at = ${options.expiresAt ?? null},
         updated_at = now()
       where id = ${id} and org_id = ${orgId} and status = 'draft'

@@ -6,27 +6,47 @@ import { QuoteTotals, StatusChip } from "@/components/proposal";
 import { resolveWorkspace } from "@/lib/auth/workspace";
 import { listBusinessOptions } from "@/lib/db/repos/businesses";
 import { listServiceItems } from "@/lib/db/repos/catalog";
+import {
+  countProposalViews,
+  findSignature,
+  getProposalLink,
+} from "@/lib/db/repos/proposal-sharing";
 import { getProposal, isEditable, listProposalLines, quoteOf } from "@/lib/db/repos/proposals";
+import { absoluteUrl } from "@/lib/http/origin";
 import { formatMoney } from "@/lib/money";
-import { addCatalogLineAction, addLineAction, removeLineAction, sendProposalAction, updateProposalAction } from "../actions";
+import { shortFingerprint } from "@/lib/proposals/fingerprint";
+import {
+  addCatalogLineAction,
+  addLineAction,
+  removeLineAction,
+  revokeProposalLinkAction,
+  sendProposalAction,
+  shareProposalAction,
+  updateProposalAction,
+} from "../actions";
 import { ProposalForm } from "../ProposalForm";
 import { LineForm } from "./LineForm";
 import { SendProposal } from "./SendProposal";
+import { ShareProposal } from "./ShareProposal";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Proposal" };
 
 async function ProposalDetail({ id }: { id: string }) {
-  const { scope } = await resolveWorkspace(await headers());
+  const requestHeaders = await headers();
+  const { scope } = await resolveWorkspace(requestHeaders);
   const proposal = await getProposal(scope, id);
   // Another workspace's proposal is a 404, not a permission error: there is nothing here
   // to have permission for.
   if (!proposal) notFound();
 
-  const [lines, catalog, businesses] = await Promise.all([
+  const [lines, catalog, businesses, link, views, signature] = await Promise.all([
     listProposalLines(scope, proposal.id),
     listServiceItems(scope),
     listBusinessOptions(scope),
+    getProposalLink(scope, proposal.id),
+    countProposalViews(scope, proposal.id),
+    findSignature(scope, proposal.id),
   ]);
 
   const editable = isEditable(proposal);
@@ -192,6 +212,32 @@ async function ProposalDetail({ id }: { id: string }) {
               These totals were written when it was sent. They do not move again.
             </p>
           )}
+
+          {editable ? null : (
+            <ShareProposal
+              proposalId={proposal.id}
+              url={link ? absoluteUrl(requestHeaders, `/p/${link.token}`) : null}
+              views={views}
+              share={shareProposalAction}
+              revoke={revokeProposalLinkAction}
+            />
+          )}
+
+          {signature ? (
+            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm">
+              <h2 className="font-semibold text-emerald-900">Signed</h2>
+              <p className="mt-1 text-emerald-900">
+                {signature.signerName} ({signature.signerEmail}) on{" "}
+                {signature.signedAt.toISOString().slice(0, 10)}.
+              </p>
+              <p className="mt-2 text-xs text-emerald-800">
+                Terms {shortFingerprint(signature.termsFingerprint)}, checked against what was sent.
+                {signature.termsFingerprint === proposal.termsFingerprint
+                  ? " Still a match."
+                  : " This no longer matches the proposal on file."}
+              </p>
+            </div>
+          ) : null}
 
           {proposal.notes ? (
             <div className="rounded-md border p-4 text-sm">

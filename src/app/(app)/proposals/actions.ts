@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { resolveWorkspace } from "@/lib/auth/workspace";
 import { getServiceItem } from "@/lib/db/repos/catalog";
+import { recordProposalEvent, revokeProposalLink, shareProposal } from "@/lib/db/repos/proposal-sharing";
 import {
   addProposalLine,
   createProposal,
@@ -104,6 +105,31 @@ export async function sendProposalAction(_previous: FormState, formData: FormDat
     return { errors: { form: said[result.reason] } };
   }
 
+  // The history the follow-up queue is derived from starts here.
+  await recordProposalEvent(scope, { proposalId: id, type: "sent" });
+
   revalidatePath(`/proposals/${id}`);
+  return { errors: {} };
+}
+
+export async function shareProposalAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const { scope } = await resolveWorkspace(await headers());
+  const proposalId = String(formData.get("proposalId") ?? "");
+  if (!proposalId) return { errors: { form: "Which proposal?" } };
+
+  const link = await shareProposal(scope, { proposalId });
+  if (!link) return { errors: { form: "That proposal is not in this workspace" } };
+
+  revalidatePath(`/proposals/${proposalId}`);
+  return { errors: {} };
+}
+
+export async function revokeProposalLinkAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const { scope } = await resolveWorkspace(await headers());
+  const proposalId = String(formData.get("proposalId") ?? "");
+  if (!proposalId) return { errors: { form: "Which proposal?" } };
+
+  await revokeProposalLink(scope, proposalId);
+  revalidatePath(`/proposals/${proposalId}`);
   return { errors: {} };
 }
