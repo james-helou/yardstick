@@ -17,6 +17,20 @@ const STATUS_NOTE: Record<PillarStatus | "pending", string | null> = {
   failed: "Could not be measured",
 };
 
+/**
+ * A check has three states, not two. `measured: false` means the provider gave us nothing
+ * to judge it by, which is neither a pass nor a failure, and drawing it as a red cross
+ * puts a finding in front of a prospect that is about our data rather than their business.
+ */
+const MARK = {
+  ok: { glyph: "✓", tone: "text-band-strong", label: "Passed", emphasis: "text-ink" },
+  bad: { glyph: "✕", tone: "text-band-critical", label: "Needs work", emphasis: "font-medium" },
+  unknown: { glyph: "·", tone: "text-ink-faint", label: "Not measured", emphasis: "text-ink-muted" },
+} as const;
+
+const markFor = (finding: Finding) =>
+  finding.measured === false ? MARK.unknown : finding.ok ? MARK.ok : MARK.bad;
+
 /** One pillar, its score, and the checks behind it in the words the report uses. */
 export function PillarCard({ pillar, status, score, findings, detail }: PillarCardProps) {
   const note = STATUS_NOTE[status];
@@ -40,18 +54,21 @@ export function PillarCard({ pillar, status, score, findings, detail }: PillarCa
 
       {findings.length > 0 ? (
         <ul className="mt-3 flex flex-col gap-1.5 text-sm">
-          {findings.map((finding) => (
-            <li key={finding.code} className="flex gap-2">
-              <span aria-hidden="true" className={finding.ok ? "text-band-strong" : "text-band-critical"}>
-                {finding.ok ? "✓" : "✕"}
-              </span>
-              <span className="sr-only">{finding.ok ? "Passed" : "Needs work"}:</span>
-              <span>
-                <span className={finding.ok ? "text-ink" : "font-medium"}>{finding.label}</span>
-                {finding.detail ? <span className="text-ink-muted"> · {finding.detail}</span> : null}
-              </span>
-            </li>
-          ))}
+          {findings.map((finding) => {
+            const mark = markFor(finding);
+            return (
+              <li key={finding.code} className="flex gap-2">
+                <span aria-hidden="true" className={mark.tone}>
+                  {mark.glyph}
+                </span>
+                <span className="sr-only">{mark.label}:</span>
+                <span>
+                  <span className={mark.emphasis}>{finding.label}</span>
+                  {finding.detail ? <span className="text-ink-muted"> · {finding.detail}</span> : null}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       ) : null}
     </article>

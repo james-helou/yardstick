@@ -9,6 +9,15 @@ export type Finding = {
   ok: boolean;
   weight: number;
   detail?: string;
+  /**
+   * False when the provider gave us nothing to judge this by.
+   *
+   * Absent means measured, so every existing finding keeps its meaning. This is the same
+   * distinction `overallScore` already draws between a pillar that scored badly and one
+   * nobody ran, one level further down: a check we could not perform is not a check the
+   * business failed, and it must not be scored, ranked or shown as one.
+   */
+  measured?: boolean;
 };
 
 export type PillarOutcome = {
@@ -88,7 +97,7 @@ export const BAND_LABEL: Record<Band, string> = {
 export function topOpportunities(outcomes: PillarOutcome[], limit = 5): Finding[] {
   return outcomes
     .flatMap((o) => o.findings)
-    .filter((f) => !f.ok)
+    .filter((f) => !f.ok && f.measured !== false)
     .sort((a, b) => b.weight - a.weight)
     .slice(0, limit);
 }

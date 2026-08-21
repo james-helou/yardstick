@@ -88,4 +88,21 @@ describe("topOpportunities", () => {
     ];
     expect(topOpportunities(outcomes).map((f) => f.code)).toEqual(["website", "hours"]);
   });
+
+  it("never leads a call with something nobody measured", () => {
+    const outcomes: PillarOutcome[] = [
+      {
+        pillar: "reputation",
+        status: "ok",
+        score: 80,
+        findings: [
+          { code: "recency", label: "A review in the last three months", ok: false, measured: false, weight: 2 },
+          { code: "volume", label: "4 reviews", ok: false, weight: 2 },
+        ],
+      },
+    ];
+    // An unmeasured check is not an opportunity. Handing a rep "no recent reviews" when
+    // the provider simply withheld the dates is the finding a prospect fact-checks.
+    expect(topOpportunities(outcomes).map((f) => f.code)).toEqual(["volume"]);
+  });
 });

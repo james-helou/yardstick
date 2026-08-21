@@ -98,6 +98,29 @@ describe("scoreReputation", () => {
     expect(low.findings.find((f) => f.code === "rating")?.ok).toBe(false);
   });
 
+  it("does not blame a business for review dates Google never sent", () => {
+    const busy = { ...COMPLETE, rating: 4.8, reviewCount: 140 };
+    const dated = scoreReputation({ ...busy, reviews: [{ rating: 5, publishedAt: "2026-08-01T00:00:00Z" }] }, NOW);
+    const undated = scoreReputation(busy, NOW);
+
+    const recency = undated.findings.find((f) => f.code === "recency");
+    expect(recency?.measured).toBe(false);
+    expect(recency?.detail).toContain("did not return");
+    // Renormalised over what was measured, so within a point of the same business with a
+    // fresh review rather than the fifteen points below it that a silent zero cost.
+    expect(undated.score!).toBeGreaterThanOrEqual(dated.score! - 2);
+  });
+
+  it("still fails recency when the business genuinely has no reviews", () => {
+    const outcome = scoreReputation(COMPLETE, NOW);
+    const recency = outcome.findings.find((f) => f.code === "recency");
+
+    // Nothing was withheld here. No reviews at all is a real diagnosis and scores as one.
+    expect(recency?.ok).toBe(false);
+    expect(recency?.measured).not.toBe(false);
+    expect(outcome.score).toBe(0);
+  });
+
   it("counts reviews it was handed when the provider gave no total", () => {
     const outcome = scoreReputation(
       { ...COMPLETE, rating: 4.5, reviews: [{ rating: 5 }, { rating: 4 }] },

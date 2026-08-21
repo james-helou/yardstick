@@ -30,11 +30,20 @@ function daysSinceNewestReview(details: PlaceDetails, now: Date): number | null 
  * Rating, volume and recency, in that order of weight. Recency is in here because a
  * five-star average from four years ago reads as a closed business, and that is exactly
  * the conversation an agency wants to be having.
+ *
+ * Recency has three states rather than two, which is the whole subtlety of this pillar.
+ * A business with no reviews has genuinely failed it. A business whose reviews exist but
+ * whose dates the provider withheld has failed nothing, and scoring that as a zero
+ * understates it by the full weight of the component while putting a red finding in a
+ * report that is about our data rather than about the business. Google is currently
+ * withholding review text on our key, so this is the live case, not a hypothetical.
  */
 export function scoreReputation(details: PlaceDetails, now: Date = new Date()): PillarOutcome {
   const rating = details.rating;
   const count = details.reviewCount ?? details.reviews?.length ?? 0;
   const staleDays = daysSinceNewestReview(details, now);
+  /** Reviews exist, but we were handed no date to judge them by. */
+  const recencyUnknown = count > 0 && staleDays === null;
 
   const findings: Finding[] = [
     {
@@ -51,24 +60,40 @@ export function scoreReputation(details: PlaceDetails, now: Date = new Date()): 
       weight: 2,
       detail: count < VOLUME_TARGET ? `Competitors in this category typically show ${VOLUME_TARGET} or more` : undefined,
     },
-    {
-      code: "recency",
-      label: "A review in the last three months",
-      ok: staleDays !== null && staleDays <= RECENT_DAYS,
-      weight: 2,
-      detail:
-        staleDays === null
-          ? "No dated reviews to judge from"
-          : staleDays > RECENT_DAYS
-            ? `Newest review is ${staleDays} days old`
-            : undefined,
-    },
+    recencyUnknown
+      ? {
+          code: "recency",
+          label: "A review in the last three months",
+          ok: false,
+          measured: false,
+          weight: 2,
+          detail: "Google did not return review dates for this listing, so this is unjudged",
+        }
+      : {
+          code: "recency",
+          label: "A review in the last three months",
+          ok: staleDays !== null && staleDays <= RECENT_DAYS,
+          weight: 2,
+          detail:
+            staleDays === null
+              ? "No dated reviews to judge from"
+              : staleDays > RECENT_DAYS
+                ? `Newest review is ${staleDays} days old`
+                : undefined,
+        },
   ];
 
-  const recencyComponent = staleDays !== null && staleDays <= RECENT_DAYS ? 1 : 0;
-  const score = roundScore(
-    (0.6 * ratingComponent(rating) + 0.25 * volumeComponent(count) + 0.15 * recencyComponent) * 100,
-  );
+  // Renormalised over what was actually measured, the way `overallScore` renormalises
+  // over the pillars that actually ran.
+  const components = [
+    { weight: 0.6, value: ratingComponent(rating) },
+    { weight: 0.25, value: volumeComponent(count) },
+    ...(recencyUnknown
+      ? []
+      : [{ weight: 0.15, value: staleDays !== null && staleDays <= RECENT_DAYS ? 1 : 0 }]),
+  ];
+  const measuredWeight = components.reduce((sum, c) => sum + c.weight, 0);
+  const earned = components.reduce((sum, c) => sum + c.weight * c.value, 0);
 
-  return { pillar: "reputation", status: "ok", score, findings };
+  return { pillar: "reputation", status: "ok", score: roundScore((earned / measuredWeight) * 100), findings };
 }
