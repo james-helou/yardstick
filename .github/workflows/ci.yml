@@ -26,10 +26,72 @@ jobs:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/yardstick_test
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run verify
+
+  # The fifth gate. It needs a server and a database of its own, which is why it cannot
+  # live inside `npm run verify`, and why it used to be run by hand and therefore
+  # sometimes not at all.
+  e2e:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: yardstick_e2e
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Playwright's config reads this and hands it to both the migration step and the
+      # server it starts, so the suite can never point at anything but its own database.
+      E2E_DATABASE_URL: postgres://postgres:postgres@localhost:5432/yardstick_e2e
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Browsers are a few hundred megabytes and change only when Playwright does, so
+      # they are keyed on the resolved version rather than on the lockfile as a whole.
+      - name: Resolve the Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v6
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+      - name: Install Chromium's system libraries
+        run: npx playwright install-deps chromium
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+
+      - run: npm run test:e2e
+
+      # A failed run keeps its traces, which is the only way to see what the browser
+      # actually did on a machine nobody can attach to.
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-traces
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
