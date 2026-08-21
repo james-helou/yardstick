@@ -21,6 +21,11 @@ const schema = z.object({
   /** Which assistant we are measuring. Stamped on every stored probe. */
   ANTHROPIC_MODEL: z.string().min(1).default("claude-sonnet-5"),
 
+  /** Email delivery. Both halves or nothing is sent, and the attempt is logged as skipped. */
+  RESEND_API_KEY: z.string().min(1).optional(),
+  /** The verified sender. Resend refuses anything else, so it is config, never a caller's choice. */
+  EMAIL_FROM: z.string().min(3).optional(),
+
   /** Bot check for public forms. Both halves or the check stays dormant. */
   TURNSTILE_SITE_KEY: z.string().min(1).optional(),
   TURNSTILE_SECRET_KEY: z.string().min(1).optional(),

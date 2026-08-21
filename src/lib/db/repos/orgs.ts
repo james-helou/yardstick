@@ -112,3 +112,23 @@ export async function listMemberships(scope: OrgScope): Promise<Membership[]> {
   `;
   return rows.map(toMembership);
 }
+
+/**
+ * Where a workspace's own notifications go: the people who run it, owners first.
+ *
+ * Reads better-auth's user table, which carries no org_id of its own. The membership
+ * row is what scopes it, and the join is filtered by the same org_id in the same
+ * statement, so a workspace can only ever learn its own members' addresses.
+ */
+export async function listOrgNotificationEmails(scope: OrgScope): Promise<string[]> {
+  const orgId = requireOrg(scope);
+  const rows = await db()<{ email: string }[]>`
+    select u."email" as email
+      from memberships m
+      join "user" u on u."id" = m.user_id
+     where m.org_id = ${orgId}
+       and m.role in ('owner', 'admin')
+     order by case m.role when 'owner' then 0 else 1 end, m.created_at asc
+  `;
+  return rows.map((r) => r.email).filter(Boolean);
+}

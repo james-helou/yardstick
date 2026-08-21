@@ -1,7 +1,9 @@
 import { parseBusinessInput } from "@/lib/businesses/schema";
+import { deliverForLead, newLeadEmail, reportReadyEmail } from "@/lib/email";
 import { createBusiness, findBusinessByWebsite } from "@/lib/db/repos/businesses";
 import { countRecentLeadsByIp, createLead, type Lead } from "@/lib/db/repos/leads";
 import { shareScan } from "@/lib/db/repos/reports";
+import { findOrgById, listOrgNotificationEmails } from "@/lib/db/repos/orgs";
 import { findActiveWidgetKey, type WidgetKey } from "@/lib/db/repos/widgets";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { startScan } from "@/lib/scans/runner";
@@ -16,6 +18,8 @@ export type SubmitInput = {
   botToken?: string | null;
   ip?: string | null;
   ipHash?: string | null;
+  /** Where this site is reachable, so the emailed link is one a person can click. */
+  origin?: string | null;
 };
 
 export type SubmitResult =
@@ -24,6 +28,9 @@ export type SubmitResult =
 
 export type SubmitDeps = {
   verifyBot?: typeof verifyTurnstile;
+  /** Injected so a test can read the words that were sent without a mail provider. */
+  sendEmail?: typeof deliverForLead;
+  agencyEmails?: typeof listOrgNotificationEmails;
 };
 
 /**
@@ -104,5 +111,60 @@ export async function submitAuditRequest(
     ipHash: input.ipHash ?? null,
   });
 
+  await notify({ scope, lead, link: link.token, business: business.name, origin: input.origin ?? null }, deps);
+
   return { ok: true, lead, scanId: scan.id, token: link.token };
+}
+
+/**
+ * Best effort, always. Two people should hear about this lead: the person who asked, who
+ * gets the report, and the agency, who gets the phone number. Neither send is allowed to
+ * undo the lead that is already saved.
+ */
+async function notify(
+  input: { scope: { orgId: string }; lead: Lead; link: string; business: string; origin: string | null },
+  deps: SubmitDeps,
+): Promise<void> {
+  if (!input.origin) return;
+  const send = deps.sendEmail ?? deliverForLead;
+  const addresses = deps.agencyEmails ?? listOrgNotificationEmails;
+
+  try {
+    const reportUrl = `${input.origin.replace(/\/+$/, "")}/r/${input.link}`;
+    const org = await findOrgById(input.scope.orgId);
+    const agencyName = org?.name ?? "your local search team";
+    const agencyInboxes = await addresses(input.scope);
+
+    await send(
+      input.scope,
+      input.lead.id,
+      reportReadyEmail({
+        to: input.lead.email,
+        agencyName,
+        businessName: input.business,
+        contactName: input.lead.contactName,
+        reportUrl,
+        // A reply belongs to the agency. We are the postman, not the correspondent.
+        replyTo: agencyInboxes[0] ?? null,
+      }),
+    );
+
+    for (const inbox of agencyInboxes) {
+      await send(
+        input.scope,
+        input.lead.id,
+        newLeadEmail({
+          to: inbox,
+          businessName: input.business,
+          email: input.lead.email,
+          contactName: input.lead.contactName,
+          phone: input.lead.phone,
+          reportUrl,
+        }),
+      );
+    }
+  } catch {
+    // A lead that was captured but not emailed is a smaller problem than a lead refused
+    // because the mail provider was down. The delivery rows record what happened.
+  }
 }

@@ -1,6 +1,6 @@
 import { clientIp, hashIp } from "@/lib/http/client-ip";
 import { submitAuditRequest } from "@/lib/leads/submit";
-import { absoluteUrl } from "@/lib/http/origin";
+import { absoluteUrl, originFrom } from "@/lib/http/origin";
 
 /**
  * The JSON door onto the same audit path the embedded form uses, for an agency who
@@ -35,6 +35,7 @@ export async function POST(request: Request): Promise<Response> {
     botToken: typeof body.botToken === "string" ? body.botToken : null,
     ip,
     ipHash: hashIp(ip),
+    origin: originFrom(request.headers),
   });
 
   if (!result.ok) {

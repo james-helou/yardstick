@@ -3,6 +3,7 @@ import { createOrg } from "@/lib/db/repos/orgs";
 import { listBusinesses } from "@/lib/db/repos/businesses";
 import { countRecentLeadsByIp, listLeads } from "@/lib/db/repos/leads";
 import { findReportLinkByToken, isLive } from "@/lib/db/repos/reports";
+import { listDeliveriesForLead } from "@/lib/db/repos/email";
 import { getScan } from "@/lib/db/repos/scans";
 import { createWidgetKey, deactivateWidgetKey } from "@/lib/db/repos/widgets";
 import { parseListQuery } from "@/lib/list/query";
@@ -172,5 +173,91 @@ describe("submitting a public audit request", () => {
     await submitAuditRequest({ publicKey: a.key.publicKey, fields: FIELDS });
     expect((await listLeads({ orgId: bOrg.id }, leadQuery)).rows).toEqual([]);
     expect((await listBusinesses({ orgId: bOrg.id }, businessQuery)).rows).toEqual([]);
+  });
+});
+
+describe("what the lead and the agency are told", () => {
+  it("emails the prospect their report and the agency their lead", async () => {
+    const { scope, key } = await agency();
+    const sent: { to: string; template: string; text: string; leadId: string }[] = [];
+
+    const result = await submitAuditRequest(
+      { publicKey: key.publicKey, fields: FIELDS, origin: "https://audit.northline.example" },
+      {
+        agencyEmails: async () => ["hello@northline.example"],
+        sendEmail: async (_scope, leadId, message) => {
+          sent.push({ to: message.to, template: message.template, text: message.text, leadId });
+          return { status: "sent", providerId: "msg", reason: null };
+        },
+      },
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(sent.map((s) => s.to)).toEqual(["owner@rivera.example", "hello@northline.example"]);
+    // Both messages point at the same live report, on the host the request arrived on.
+    const url = `https://audit.northline.example/r/${result.token}`;
+    expect(sent.every((s) => s.text.includes(url))).toBe(true);
+    // Both are filed against the lead, so the agency can see what was sent.
+    expect(sent.every((s) => s.leadId === result.lead.id)).toBe(true);
+    expect(await listDeliveriesForLead(scope, result.lead.id)).toEqual([]);
+  });
+
+  it("records what happened when nothing can be sent, and still keeps the lead", async () => {
+    const { scope, key } = await agency();
+
+    const result = await submitAuditRequest(
+      { publicKey: key.publicKey, fields: FIELDS, origin: "https://audit.northline.example" },
+      { agencyEmails: async () => [] },
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const deliveries = await listDeliveriesForLead(scope, result.lead.id);
+    // No provider is configured in a test environment, so the attempt is on file as skipped.
+    expect(deliveries).toHaveLength(1);
+    expect(deliveries[0]).toMatchObject({ status: "skipped", toAddress: "owner@rivera.example" });
+  });
+
+  it("keeps the lead when the mail provider throws on its way out", async () => {
+    const { scope, key } = await agency();
+
+    const result = await submitAuditRequest(
+      { publicKey: key.publicKey, fields: FIELDS, origin: "https://audit.northline.example" },
+      {
+        agencyEmails: async () => {
+          throw new Error("the user table went away");
+        },
+      },
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const { rows } = await listLeads(scope, leadQuery);
+    expect(rows).toHaveLength(1);
+  });
+
+  it("sends nothing when there is no host to build a link on", async () => {
+    const { scope, key } = await agency();
+    const sent: string[] = [];
+
+    const result = await submitAuditRequest(
+      { publicKey: key.publicKey, fields: FIELDS },
+      {
+        agencyEmails: async () => ["hello@northline.example"],
+        sendEmail: async (_scope, _leadId, message) => {
+          sent.push(message.to);
+          return { status: "sent", providerId: "msg", reason: null };
+        },
+      },
+    );
+
+    expect(result.ok).toBe(true);
+    // A report link with no origin is a relative path, which is useless in an inbox.
+    expect(sent).toEqual([]);
+    if (!result.ok) return;
+    expect(await listDeliveriesForLead(scope, result.lead.id)).toEqual([]);
   });
 });

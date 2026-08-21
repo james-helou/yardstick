@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { clientIp, hashIp } from "@/lib/http/client-ip";
+import { originFrom } from "@/lib/http/origin";
 import { submitAuditRequest } from "@/lib/leads/submit";
 import type { FormState } from "@/lib/forms/state";
 
@@ -28,6 +29,7 @@ export async function requestAuditAction(_previous: FormState, formData: FormDat
     botToken: formData.get("cf-turnstile-response")?.toString() ?? null,
     ip,
     ipHash: hashIp(ip),
+    origin: originFrom(requestHeaders),
   });
 
   if (!result.ok) return { errors: result.errors };

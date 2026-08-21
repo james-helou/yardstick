@@ -23,6 +23,7 @@ const TENANT_TABLE_OWNERS: Record<string, string> = {
   report_views: "src/lib/db/repos/reports.ts",
   widget_keys: "src/lib/db/repos/widgets.ts",
   leads: "src/lib/db/repos/leads.ts",
+  email_deliveries: "src/lib/db/repos/email.ts",
 };
 
 /**

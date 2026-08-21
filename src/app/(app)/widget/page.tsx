@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { resolveWorkspace } from "@/lib/auth/workspace";
 import { listWidgetKeys } from "@/lib/db/repos/widgets";
+import { emailConfigured } from "@/lib/email";
 import { absoluteUrl } from "@/lib/http/origin";
 import { WidgetKeys } from "./WidgetKeys";
 
@@ -21,6 +22,14 @@ export default async function WidgetPage() {
           scored, with their report waiting.
         </p>
       </div>
+
+      {emailConfigured() ? null : (
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          Email is not switched on yet, so a visitor sees their report on screen but does not receive
+          it, and you are not notified. Set <code>RESEND_API_KEY</code> and <code>EMAIL_FROM</code> to
+          turn it on. Leads are still captured either way.
+        </p>
+      )}
 
       <WidgetKeys
         keys={keys.map((key) => ({

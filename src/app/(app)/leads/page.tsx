@@ -4,6 +4,7 @@ import { GuardedSuspense } from "@/components/GuardedSuspense";
 import { ListShell, SortableHeader, UrlSearchInput } from "@/components/list";
 import { ScoreBadge } from "@/components/scan";
 import { resolveWorkspace } from "@/lib/auth/workspace";
+import { latestDeliveryByLead, type EmailDelivery } from "@/lib/db/repos/email";
 import { listLeads, LEAD_LIST_SPEC, type LeadSort } from "@/lib/db/repos/leads";
 import { parseListQuery, toSearchParams, type SortDirection } from "@/lib/list/query";
 
@@ -16,6 +17,10 @@ async function LeadTable({ params }: { params: SearchParams }) {
   const { scope } = await resolveWorkspace(await headers());
   const query = parseListQuery<LeadSort>(params, LEAD_LIST_SPEC);
   const { rows, window } = await listLeads(scope, query);
+  const delivered = await latestDeliveryByLead(
+    scope,
+    rows.map((lead) => lead.id),
+  );
 
   const href = (next: Partial<typeof query>) => {
     const search = toSearchParams({ ...query, ...next }, LEAD_LIST_SPEC).toString();
@@ -45,6 +50,9 @@ async function LeadTable({ params }: { params: SearchParams }) {
               activeDirection={query.direction}
               href={sortHref}
             />
+            <th scope="col" className="px-3 py-2 text-left font-medium">
+              Report sent
+            </th>
             <th scope="col" className="px-3 py-2 text-right font-medium">
               Score
             </th>
@@ -76,6 +84,9 @@ async function LeadTable({ params }: { params: SearchParams }) {
                 </a>
                 {lead.contactName ? <span className="text-neutral-600"> · {lead.contactName}</span> : null}
               </td>
+              <td className="px-3 py-2">
+                <DeliveryChip delivery={delivered.get(lead.id) ?? null} />
+              </td>
               <td className="px-3 py-2 text-right">
                 {lead.scanId ? (
                   <Link href={`/scans/${lead.scanId}`}>
@@ -93,6 +104,34 @@ async function LeadTable({ params }: { params: SearchParams }) {
         </tbody>
       </table>
     </ListShell>
+  );
+}
+
+/**
+ * What the prospect was actually told. A lead nobody could email is worth seeing on the
+ * list, not buried in a log, because the rep has to pick up the phone instead.
+ */
+function DeliveryChip({ delivery }: { delivery: EmailDelivery | null }) {
+  if (!delivery) return <span className="text-neutral-400">Not yet</span>;
+
+  const look: Record<EmailDelivery["status"], string> = {
+    sent: "bg-emerald-50 text-emerald-800",
+    skipped: "bg-amber-50 text-amber-800",
+    failed: "bg-rose-50 text-rose-800",
+  };
+  const words: Record<EmailDelivery["status"], string> = {
+    sent: "Sent",
+    skipped: "Not sent",
+    failed: "Failed",
+  };
+
+  return (
+    <span
+      className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${look[delivery.status]}`}
+      title={delivery.error ?? `Sent ${delivery.createdAt.toISOString().slice(0, 10)}`}
+    >
+      {words[delivery.status]}
+    </span>
   );
 }
 
