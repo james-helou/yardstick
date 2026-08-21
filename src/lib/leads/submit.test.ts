@@ -21,8 +21,8 @@ const FIELDS = {
   primaryCategory: "plumber",
 };
 
-async function agency() {
-  const org = await createOrg({ name: "Agency A", slug: "agency-a" });
+async function agency(slug = "agency-a") {
+  const org = await createOrg({ name: slug, slug });
   const scope = { orgId: org.id };
   const key = await createWidgetKey(scope);
   return { scope, key };
@@ -173,6 +173,49 @@ describe("submitting a public audit request", () => {
     await submitAuditRequest({ publicKey: a.key.publicKey, fields: FIELDS });
     expect((await listLeads({ orgId: bOrg.id }, leadQuery)).rows).toEqual([]);
     expect((await listBusinesses({ orgId: bOrg.id }, businessQuery)).rows).toEqual([]);
+  });
+});
+
+describe("the rate limit belongs to one workspace at a time", () => {
+  it("does not let one agency's traffic close another agency's door", async () => {
+    const a = await agency("agency-a");
+    const b = await agency("agency-b");
+    const ipHash = "one-shared-office";
+
+    for (let i = 0; i < RATE_LIMIT.requests; i++) {
+      const ok = await submitAuditRequest({
+        publicKey: a.key.publicKey,
+        fields: { ...FIELDS, website: `site-${i}.example`, email: `owner${i}@rivera.example` },
+        ipHash,
+      });
+      expect(ok.ok).toBe(true);
+    }
+
+    // Spent, here.
+    expect((await submitAuditRequest({ publicKey: a.key.publicKey, fields: FIELDS, ipHash })).ok).toBe(false);
+    // A different agency's prospect is a different conversation.
+    expect((await submitAuditRequest({ publicKey: b.key.publicKey, fields: FIELDS, ipHash })).ok).toBe(true);
+  });
+
+  it("still stops one address walking every widget on the platform", async () => {
+    const ipHash = "a-busy-bot";
+    let refusals = 0;
+
+    for (let i = 0; i < RATE_LIMIT.platformRequests + 2; i++) {
+      // A fresh workspace every time, so only the platform ceiling can refuse it.
+      const { key } = await agency(`agency-${i}`);
+      const result = await submitAuditRequest({
+        publicKey: key.publicKey,
+        fields: { ...FIELDS, website: `site-${i}.example`, email: `owner${i}@rivera.example` },
+        ipHash,
+      });
+      if (!result.ok) {
+        refusals += 1;
+        expect(result.status).toBe(429);
+      }
+    }
+
+    expect(refusals).toBe(2);
   });
 });
 

@@ -218,3 +218,22 @@ export async function countBusinessesByStatus(
   for (const row of rows) counts[row.status] = Number(row.count);
   return counts;
 }
+
+/**
+ * Just enough to fill a picker: every prospect's id and name, in one query.
+ *
+ * The paged list is for reading; this is for choosing, where a name that is missing
+ * because it fell on page two is a bug the user cannot see the cause of.
+ */
+export async function listBusinessOptions(
+  scope: OrgScope,
+  limit = 500,
+): Promise<{ id: string; name: string }[]> {
+  const orgId = requireOrg(scope);
+  return db()<{ id: string; name: string }[]>`
+    select id, name from businesses
+     where org_id = ${orgId}
+     order by lower(name) asc
+     limit ${limit}
+  `;
+}

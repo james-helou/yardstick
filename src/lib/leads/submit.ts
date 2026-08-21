@@ -9,8 +9,14 @@ import { verifyTurnstile } from "@/lib/security/turnstile";
 import { startScan } from "@/lib/scans/runner";
 import { parseAuditRequest } from "./schema";
 
-/** How many audits one submitter may ask for, and over what window. */
-export const RATE_LIMIT = { requests: 5, windowMs: 60 * 60 * 1000 };
+/**
+ * How many audits one submitter may ask for, and over what window.
+ *
+ * Two ceilings: what one address may ask of one agency, and what it may ask of the whole
+ * platform. The first keeps a single widget from being farmed; the second keeps somebody
+ * from walking a list of widget keys and staying under every one of them.
+ */
+export const RATE_LIMIT = { requests: 5, platformRequests: 25, windowMs: 60 * 60 * 1000 };
 
 export type SubmitInput = {
   publicKey: string;
@@ -58,8 +64,11 @@ export async function submitAuditRequest(
   if (!bot.ok) return { ok: false, status: 400, errors: { form: bot.reason ?? "That check did not pass" } };
 
   if (input.ipHash) {
-    const recent = await countRecentLeadsByIp({ ipHash: input.ipHash, withinMs: RATE_LIMIT.windowMs });
-    if (recent >= RATE_LIMIT.requests) {
+    const [here, everywhere] = await Promise.all([
+      countRecentLeadsByIp({ ipHash: input.ipHash, withinMs: RATE_LIMIT.windowMs, orgId: key.orgId }),
+      countRecentLeadsByIp({ ipHash: input.ipHash, withinMs: RATE_LIMIT.windowMs }),
+    ]);
+    if (here >= RATE_LIMIT.requests || everywhere >= RATE_LIMIT.platformRequests) {
       return {
         ok: false,
         status: 429,

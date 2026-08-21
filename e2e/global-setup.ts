@@ -1,4 +1,4 @@
-import { closeDirectDb } from "../src/lib/db/client";
+import { closeDirectDb, db } from "../src/lib/db/client";
 import { migrate } from "../src/lib/db/migrate";
 
 /**
@@ -9,5 +9,10 @@ import { migrate } from "../src/lib/db/migrate";
 export default async function globalSetup(): Promise<void> {
   const applied = await migrate();
   if (applied.length > 0) console.log(`[e2e] applied ${applied.length} migration(s)`);
+
+  // Leads carry a rate limit keyed on the submitter's address, and every run submits from
+  // the same loopback address. Left alone, the suite eventually rate-limits itself.
+  await db()`delete from leads`;
+
   await closeDirectDb();
 }

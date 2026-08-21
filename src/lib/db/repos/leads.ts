@@ -129,11 +129,24 @@ export async function listLeads(
  * the leads themselves rather than a separate counter, so a restart cannot reset it and
  * there is nothing to keep in sync.
  */
-export async function countRecentLeadsByIp(input: { ipHash: string; withinMs: number }): Promise<number> {
-  const [row] = await db()<{ recent: string }[]>`
+/**
+ * How many audits this submitter has asked for lately. Scoped to one workspace by
+ * default: a shared office address that already used up an agency's allowance is not a
+ * reason to refuse a different agency's prospect. Omit the org for the cross-tenant
+ * ceiling, which is what actually stops a bot walking the widget keys.
+ */
+export async function countRecentLeadsByIp(input: {
+  ipHash: string;
+  withinMs: number;
+  orgId?: string;
+}): Promise<number> {
+  const sql = db();
+  const since = `${Math.round(input.withinMs / 1000)} seconds`;
+  const [row] = await sql<{ recent: string }[]>`
     select count(*) as recent from leads
      where ip_hash = ${input.ipHash}
-       and created_at > now() - ${`${Math.round(input.withinMs / 1000)} seconds`}::interval
+       ${input.orgId ? sql`and org_id = ${input.orgId}` : sql``}
+       and created_at > now() - ${since}::interval
   `;
   return Number(row?.recent ?? 0);
 }

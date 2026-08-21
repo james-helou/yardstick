@@ -24,6 +24,9 @@ const TENANT_TABLE_OWNERS: Record<string, string> = {
   widget_keys: "src/lib/db/repos/widgets.ts",
   leads: "src/lib/db/repos/leads.ts",
   email_deliveries: "src/lib/db/repos/email.ts",
+  service_items: "src/lib/db/repos/catalog.ts",
+  proposals: "src/lib/db/repos/proposals.ts",
+  proposal_lines: "src/lib/db/repos/proposals.ts",
 };
 
 /**
@@ -50,6 +53,13 @@ const ALLOWED_READS: Record<string, { table: string; because: string }[]> = {
       table: "scans",
       because:
         "the lead list shows the score the audit produced, joined under the same org_id as the lead itself",
+    },
+  ],
+  "src/lib/db/repos/proposals.ts": [
+    {
+      table: "businesses",
+      because:
+        "a proposal is read and searched by the prospect it is for, and every join carries the same org_id filter on both sides",
     },
   ],
   "src/lib/db/repos/scans.ts": [

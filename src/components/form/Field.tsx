@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 
 export type FieldProps = {
   name: string;
+  /** Defaults to the name. Set it when two forms on one page share a field name. */
+  id?: string;
   label: string;
   type?: string;
   required?: boolean;
@@ -20,6 +22,7 @@ export type FieldProps = {
  */
 export function Field({
   name,
+  id,
   label,
   type = "text",
   required,
@@ -30,20 +33,21 @@ export function Field({
   hint,
   children,
 }: FieldProps) {
-  const describedBy = [error ? `${name}-error` : null, hint ? `${name}-hint` : null]
+  const fieldId = id ?? name;
+  const describedBy = [error ? `${fieldId}-error` : null, hint ? `${fieldId}-hint` : null]
     .filter(Boolean)
     .join(" ");
 
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={name} className="text-sm font-medium">
+      <label htmlFor={fieldId} className="text-sm font-medium">
         {label}
         {required ? <span className="text-neutral-500"> (required)</span> : null}
       </label>
 
       {children ?? (
         <input
-          id={name}
+          id={fieldId}
           name={name}
           type={type}
           required={required}
@@ -57,12 +61,12 @@ export function Field({
       )}
 
       {hint ? (
-        <p id={`${name}-hint`} className="text-xs text-neutral-500">
+        <p id={`${fieldId}-hint`} className="text-xs text-neutral-500">
           {hint}
         </p>
       ) : null}
       {error ? (
-        <p id={`${name}-error`} className="text-xs font-medium text-red-700">
+        <p id={`${fieldId}-error`} className="text-xs font-medium text-red-700">
           {error}
         </p>
       ) : null}
