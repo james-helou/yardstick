@@ -319,7 +319,7 @@ describe("the scan pipeline", () => {
     const { scope, business } = await workspace({ placeId: null, websiteUrl: null });
     const started = await startScan(scope, { businessId: business.id });
 
-    await drain(scanHandlers({ places: null }));
+    await drain(scanHandlers({ places: null, probe: async () => PROBE }));
 
     const scan = await getScan(scope, started!.id);
     expect(scan?.status).toBe("failed");
@@ -417,7 +417,11 @@ describe("credits and caching", () => {
     const { scope, business } = await workspace({ credits: 0 });
     const started = await startScan(scope, { businessId: business.id });
 
-    await runOnce({ worker: "test", handlers: scanHandlers({ places: null }), batchSize: 10 });
+    await runOnce({
+      worker: "test",
+      handlers: scanHandlers({ places: null, probe: async () => PROBE }),
+      batchSize: 10,
+    });
 
     const scan = await getScan(scope, started!.id);
     expect(scan?.status).toBe("running");
@@ -466,7 +470,7 @@ describe("the AI visibility pillar", () => {
   it("stores every answer verbatim against the scan that asked", async () => {
     const { scope, business } = await workspace();
     const started = await startScan(scope, { businessId: business.id });
-    await drain(scanHandlers({ places: null, ai: ai() }));
+    await drain(scanHandlers({ places: null, probe: async () => PROBE, ai: ai() }));
 
     const probes = await listAiProbes(scope, { scanId: started!.id });
     expect(probes).toHaveLength(CURRENT_PROMPT_SET.prompts.length);
@@ -486,7 +490,7 @@ describe("the AI visibility pillar", () => {
     };
 
     const started = await startScan(scope, { businessId: business.id });
-    await drain(scanHandlers({ places: null, ai: broken }), 12);
+    await drain(scanHandlers({ places: null, probe: async () => PROBE, ai: broken }), 12);
 
     const pillar = (await latestPillarResults(scope, started!.id)).find((p) => p.pillar === "ai_visibility");
     expect(pillar?.status).toBe("failed");
