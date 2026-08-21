@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { ScanReport, ScoreBadge } from "@/components/scan";
+import { ScanProgress, ScanReport, ScoreBadge } from "@/components/scan";
 import { resolveWorkspace } from "@/lib/auth/workspace";
 import { listAiProbes } from "@/lib/db/repos/ai-probes";
 import { listGridPoints } from "@/lib/db/repos/grid";
@@ -9,7 +9,6 @@ import { countReportViews, getReportLink } from "@/lib/db/repos/reports";
 import { getScan, latestPillarResults } from "@/lib/db/repos/scans";
 import { absoluteUrl } from "@/lib/http/origin";
 import type { PillarOutcome } from "@/lib/scans/score";
-import { ScanProgress } from "../ScanProgress";
 import { ShareReport } from "../ShareReport";
 import { SCAN_STATUS_LABEL } from "../page";
 

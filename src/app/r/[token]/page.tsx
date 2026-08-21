@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { ScanReport, ScoreBadge } from "@/components/scan";
+import { ScanProgress, ScanReport, ScoreBadge } from "@/components/scan";
 import { listAiProbes } from "@/lib/db/repos/ai-probes";
 import { listGridPoints } from "@/lib/db/repos/grid";
 import { findOrgById } from "@/lib/db/repos/orgs";
@@ -58,7 +58,10 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
         </p>
       </header>
 
-      <ScoreBadge score={scan.score} size="large" />
+      <div className="flex flex-wrap items-center gap-4">
+        <ScoreBadge score={scan.score} size="large" />
+        <ScanProgress done={scan.status === "complete" || scan.status === "failed"} />
+      </div>
 
       <ScanReport outcomes={outcomes} gridPoints={gridPoints} aiProbes={aiProbes} />
 

@@ -33,6 +33,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Link href="/scans" className="hover:underline">
               Scans
             </Link>
+            <Link href="/leads" className="hover:underline">
+              Leads
+            </Link>
+            <Link href="/widget" className="hover:underline">
+              Widget
+            </Link>
           </nav>
           <div className="ml-auto flex items-center gap-3 text-sm">
             <span className="text-neutral-600">{workspaceName}</span>

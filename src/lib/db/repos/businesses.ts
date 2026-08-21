@@ -1,5 +1,5 @@
 import type { BusinessInput, BusinessStatus } from "@/lib/businesses/schema";
-import { BUSINESS_STATUSES } from "@/lib/businesses/schema";
+import { BUSINESS_STATUSES, parseBusinessInput } from "@/lib/businesses/schema";
 import { orderByFragment, pageWindow, type ListQuery, type PageWindow } from "@/lib/list/query";
 import { db } from "../client";
 import { requireOrg, type OrgScope } from "../scope";
@@ -118,6 +118,26 @@ export async function getBusiness(scope: OrgScope, id: string): Promise<Business
   const rows = await db()<Row[]>`
     select ${db().unsafe(COLUMNS)} from businesses
      where org_id = ${orgId} and id = ${id}
+  `;
+  return rows.length ? toBusiness(rows[0]) : null;
+}
+
+/**
+ * The business already on file for a website, if there is one. Public audit requests go
+ * through this first, so a prospect who submits the same site twice joins the row that
+ * exists instead of creating a second one the agency has to merge by hand.
+ */
+export async function findBusinessByWebsite(scope: OrgScope, websiteUrl: string): Promise<Business | null> {
+  const orgId = requireOrg(scope);
+  const parsed = parseBusinessInput({ name: "x", status: "prospect", websiteUrl });
+  const normalised = parsed.ok ? parsed.value.websiteUrl : undefined;
+  if (!normalised) return null;
+
+  const rows = await db()<Row[]>`
+    select ${db().unsafe(COLUMNS)} from businesses
+     where org_id = ${orgId} and lower(website_url) = ${normalised.toLowerCase()}
+     order by created_at asc
+     limit 1
   `;
   return rows.length ? toBusiness(rows[0]) : null;
 }

@@ -21,6 +21,10 @@ const schema = z.object({
   /** Which assistant we are measuring. Stamped on every stored probe. */
   ANTHROPIC_MODEL: z.string().min(1).default("claude-sonnet-5"),
 
+  /** Bot check for public forms. Both halves or the check stays dormant. */
+  TURNSTILE_SITE_KEY: z.string().min(1).optional(),
+  TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
+
   /** Rank data. Both halves or nothing: the grid pillar reports itself unmeasured. */
   DATAFORSEO_LOGIN: z.string().min(1).optional(),
   DATAFORSEO_PASSWORD: z.string().min(1).optional(),

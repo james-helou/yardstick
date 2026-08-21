@@ -21,6 +21,8 @@ const TENANT_TABLE_OWNERS: Record<string, string> = {
   ai_probes: "src/lib/db/repos/ai-probes.ts",
   report_links: "src/lib/db/repos/reports.ts",
   report_views: "src/lib/db/repos/reports.ts",
+  widget_keys: "src/lib/db/repos/widgets.ts",
+  leads: "src/lib/db/repos/leads.ts",
 };
 
 /**
@@ -35,6 +37,18 @@ const ALLOWED_READS: Record<string, { table: string; because: string }[]> = {
       table: "scans",
       because:
         "sharing a scan inserts by selecting from scans under the same org_id, which is what makes a scan in another workspace produce no link at all",
+    },
+  ],
+  "src/lib/db/repos/leads.ts": [
+    {
+      table: "businesses",
+      because:
+        "a lead reads as a name and a company, so the list joins the business it created, and every join carries the same org_id filter",
+    },
+    {
+      table: "scans",
+      because:
+        "the lead list shows the score the audit produced, joined under the same org_id as the lead itself",
     },
   ],
   "src/lib/db/repos/scans.ts": [
