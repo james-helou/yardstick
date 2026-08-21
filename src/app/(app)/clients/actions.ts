@@ -7,10 +7,12 @@ import {
   addWorkItem,
   endEngagement,
   getEngagement,
-  openEngagement,
   reopenEngagement,
   setWorkStatus,
 } from "@/lib/db/repos/engagements";
+import { setCommissionPlan, payCommission } from "@/lib/db/repos/commissions";
+import { startDelivery } from "@/lib/delivery/start";
+import { money, type Currency } from "@/lib/money";
 import { getProposal, listProposalLines, quoteOf } from "@/lib/db/repos/proposals";
 import { isWorkStatus } from "@/lib/delivery/plan";
 
@@ -43,7 +45,7 @@ export async function startDeliveryAction(formData: FormData): Promise<void> {
   const quote = quoteOf(proposal, lines);
   const totals = proposal.totals ?? { oneTime: quote.oneTimeTotal, monthly: quote.monthlyTotal };
 
-  await openEngagement(scope, {
+  await startDelivery(scope, {
     proposalId: proposal.id,
     monthly: totals.monthly,
     oneTime: totals.oneTime,
@@ -54,6 +56,7 @@ export async function startDeliveryAction(formData: FormData): Promise<void> {
       quantity: line.quantity,
     })),
     signedAt: proposal.decidedAt ?? undefined,
+    ownerUserId: proposal.ownerUserId,
   });
 
   refresh(proposal.businessId);
@@ -97,4 +100,43 @@ export async function reopenEngagementAction(formData: FormData): Promise<void> 
   const reopened = await reopenEngagement(scope, engagementId);
   // A reopen that changed nothing still refreshes, so the page never lies about state.
   refresh(reopened?.businessId ?? (await getEngagement(scope, engagementId))?.businessId ?? null);
+}
+
+/**
+ * The workspace's commission rate. Percentages arrive as text from a form and are stored
+ * as basis points, so 12.5% survives the round trip exactly.
+ */
+export async function setCommissionPlanAction(formData: FormData): Promise<void> {
+  const { scope } = await resolveWorkspace(await headers());
+
+  const bp = (name: string): number => {
+    const value = Number(String(formData.get(name) ?? ""));
+    return Number.isFinite(value) ? Math.round(Math.min(100, Math.max(0, value)) * 100) : 0;
+  };
+  const months = Number(String(formData.get("monthlyMonths") ?? ""));
+
+  await setCommissionPlan(scope, {
+    name: String(formData.get("name") ?? "Standard").trim() || "Standard",
+    oneTimeBp: bp("oneTimePercent"),
+    monthlyBp: bp("monthlyPercent"),
+    monthlyMonths: Number.isFinite(months) ? Math.round(Math.min(60, Math.max(0, months))) : 0,
+  });
+
+  revalidatePath("/clients");
+}
+
+/** Records a payout. The repo refuses anything larger than what is actually owed. */
+export async function payCommissionAction(formData: FormData): Promise<void> {
+  const { scope } = await resolveWorkspace(await headers());
+  const userId = String(formData.get("userId") ?? "");
+  const currency = String(formData.get("currency") ?? "") as Currency;
+  const amount = Number(String(formData.get("amount") ?? ""));
+  if (!userId || !Number.isFinite(amount) || amount <= 0) return;
+
+  await payCommission(scope, {
+    userId,
+    amount: money(Math.round(amount), currency),
+    note: String(formData.get("note") ?? "").trim() || null,
+  });
+  revalidatePath("/clients");
 }

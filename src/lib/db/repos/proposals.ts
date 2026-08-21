@@ -14,6 +14,8 @@ export type Proposal = {
   businessId: string | null;
   businessName: string | null;
   scanId: string | null;
+  /** Who sold it. Null on anything written before commissions existed. */
+  ownerUserId: string | null;
   title: string;
   status: ProposalStatus;
   currency: Currency;
@@ -50,6 +52,7 @@ type Row = {
   business_id: string | null;
   business_name?: string | null;
   scan_id: string | null;
+  owner_user_id: string | null;
   title: string;
   status: ProposalStatus;
   currency: Currency;
@@ -90,6 +93,7 @@ const toProposal = (r: Row): Proposal => ({
   businessId: r.business_id,
   businessName: r.business_name ?? null,
   scanId: r.scan_id,
+  ownerUserId: r.owner_user_id,
   title: r.title,
   status: r.status,
   currency: r.currency,
@@ -132,6 +136,8 @@ export type ProposalInput = {
   title: string;
   currency: Currency;
   businessId?: string | null;
+  /** Who gets the commission. Whoever started it, unless the agency says otherwise. */
+  ownerUserId?: string | null;
   scanId?: string | null;
   termMonths?: number;
   freeMonths?: number;
@@ -144,12 +150,14 @@ export async function createProposal(scope: OrgScope, input: ProposalInput): Pro
   const orgId = requireOrg(scope);
   const [row] = await db()<Row[]>`
     insert into proposals (
-      org_id, business_id, scan_id, title, currency, term_months, free_months, discount_bp, tax_bp, notes
+      org_id, business_id, scan_id, owner_user_id, title, currency, term_months, free_months,
+      discount_bp, tax_bp, notes
     )
     values (
       ${orgId},
       ${input.businessId ?? null},
       ${input.scanId ?? null},
+      ${input.ownerUserId ?? null},
       ${input.title},
       ${input.currency},
       ${input.termMonths ?? 0},

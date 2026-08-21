@@ -34,6 +34,8 @@ const TENANT_TABLE_OWNERS: Record<string, string> = {
   portal_grants: "src/lib/db/repos/portal.ts",
   engagements: "src/lib/db/repos/engagements.ts",
   work_items: "src/lib/db/repos/engagements.ts",
+  commission_plans: "src/lib/db/repos/commissions.ts",
+  commission_entries: "src/lib/db/repos/commissions.ts",
 };
 
 /**

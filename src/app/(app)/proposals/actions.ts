@@ -21,12 +21,14 @@ const fields = (formData: FormData): Record<string, unknown> => Object.fromEntri
 
 export async function createProposalAction(_previous: FormState, formData: FormData): Promise<FormState> {
   // An action is its own entry point. The layout above did not protect this.
-  const { scope } = await resolveWorkspace(await headers());
+  const { scope, user } = await resolveWorkspace(await headers());
 
   const parsed = parseProposalFields(fields(formData));
   if (!parsed.ok) return { errors: parsed.errors };
 
-  const proposal = await createProposal(scope, parsed.value);
+  // Whoever started it sold it. That is who any commission is owed to, and it is a
+  // question with an answer here rather than a field somebody forgets to fill in.
+  const proposal = await createProposal(scope, { ...parsed.value, ownerUserId: user.id });
   redirect(`/proposals/${proposal.id}`);
 }
 

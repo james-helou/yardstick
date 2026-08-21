@@ -132,3 +132,22 @@ export async function listOrgNotificationEmails(scope: OrgScope): Promise<string
   `;
   return rows.map((r) => r.email).filter(Boolean);
 }
+
+export type Member = { userId: string; email: string; name: string | null; role: Role };
+
+/**
+ * Who is in this workspace, with the name a person would recognise. Same shape of join as
+ * the notification addresses above: the membership row is what scopes it, and the filter
+ * is on the same org_id in the same statement.
+ */
+export async function listMembers(scope: OrgScope): Promise<Member[]> {
+  const orgId = requireOrg(scope);
+  const rows = await db()<{ user_id: string; email: string; name: string | null; role: Role }[]>`
+    select m.user_id, u."email" as email, u."name" as name, m.role
+      from memberships m
+      join "user" u on u."id" = m.user_id
+     where m.org_id = ${orgId}
+     order by case m.role when 'owner' then 0 when 'admin' then 1 else 2 end, u."email" asc
+  `;
+  return rows.map((r) => ({ userId: r.user_id, email: r.email, name: r.name, role: r.role }));
+}

@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { GuardedSuspense } from "@/components/GuardedSuspense";
-import { PortfolioSummary } from "@/components/delivery";
+import { Commissions, PortfolioSummary, type PayoutLine } from "@/components/delivery";
 import { resolveWorkspace } from "@/lib/auth/workspace";
+import { getCommissionPlan, listOwed } from "@/lib/db/repos/commissions";
 import { listEngagements, listOpenWork } from "@/lib/db/repos/engagements";
+import { listMembers } from "@/lib/db/repos/orgs";
 import { portfolioOf } from "@/lib/delivery/portfolio";
 import { WORK_KIND_LABEL } from "@/lib/delivery/plan";
 import { formatMoney } from "@/lib/money";
+import { setCommissionPlanAction, payCommissionAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -34,16 +37,40 @@ export default function ClientsPage() {
 
 async function Portfolio() {
   const { scope } = await resolveWorkspace(await headers());
-  const [engagements, open] = await Promise.all([listEngagements(scope), listOpenWork(scope, 12)]);
+  const [engagements, open, plan, owed, members] = await Promise.all([
+    listEngagements(scope),
+    listOpenWork(scope, 12),
+    getCommissionPlan(scope),
+    listOwed(scope),
+    listMembers(scope),
+  ]);
   const now = new Date();
   const portfolio = portfolioOf(engagements, now);
 
+  // Everyone who has earned something, named by the address the workspace already knows.
+  const nameOf = new Map(members.map((m) => [m.userId, m.name || m.email]));
+  const payouts: PayoutLine[] = owed.map((row) => ({
+    userId: row.userId,
+    label: nameOf.get(row.userId) ?? row.email ?? "A former member",
+    accrued: row.accrued,
+    paid: row.paid,
+    owed: row.owed,
+  }));
+
   if (engagements.length === 0) {
     return (
-      <p className="text-sm text-neutral-600">
-        No signed proposals yet. The moment one is accepted, the client and the work it created
-        appear here.
-      </p>
+      <div className="flex flex-col gap-8">
+        <p className="text-sm text-neutral-600">
+          No signed proposals yet. The moment one is accepted, the client and the work it created
+          appear here.
+        </p>
+        <Commissions
+          plan={plan}
+          lines={payouts}
+          setPlan={setCommissionPlanAction}
+          pay={payCommissionAction}
+        />
+      </div>
     );
   }
 
@@ -85,6 +112,13 @@ async function Portfolio() {
           </ul>
         )}
       </div>
+
+      <Commissions
+        plan={plan}
+        lines={payouts}
+        setPlan={setCommissionPlanAction}
+        pay={payCommissionAction}
+      />
 
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500">

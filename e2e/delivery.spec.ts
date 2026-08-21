@@ -29,6 +29,15 @@ test("a signature generates the work the agency owes, and the book of business",
   await page.getByRole("link", { name: "Clients", exact: true }).click();
   await expect(page.getByText("No signed proposals yet.")).toBeVisible();
 
+  // A rate, set before anything is sold, so a signature has something to accrue against.
+  const commissions = page.getByRole("region", { name: "Commissions" });
+  await expect(commissions.getByText("No rate set")).toBeVisible();
+  await commissions.getByLabel("Setup (%)").fill("10");
+  await commissions.getByLabel("Retainer (%)").fill("10");
+  await commissions.getByLabel("For (months)").fill("3");
+  await commissions.getByRole("button", { name: "Save rate" }).click();
+  await expect(commissions.getByText("10% of the setup")).toBeVisible();
+
   await page.getByRole("link", { name: "Businesses", exact: true }).click();
   await page.getByRole("link", { name: "Add a business" }).first().click();
   await page.getByLabel("Name").fill("Rivera Dental");
@@ -97,6 +106,18 @@ test("a signature generates the work the agency owes, and the book of business",
   await expect(page.getByText("Monthly recurring")).toBeVisible();
   await expect(page.getByRole("link", { name: "Rivera Dental" })).toBeVisible();
   await expect(page.getByText("Get access to the website")).toBeVisible();
+
+  // The rep who wrote the proposal is owed: ten per cent of $1,500 once, and ten per
+  // cent of $900 for three months.
+  const payouts = page.getByRole("region", { name: "Commissions" });
+  // Named by whoever created the workspace, which for a solo agency is the agency itself.
+  await expect(payouts.getByText(agency.agency)).toBeVisible();
+  await expect(payouts.getByText(/420[.,]00.*owed/)).toBeVisible();
+
+  await payouts.getByRole("button", { name: "Mark paid" }).click();
+  await expect(payouts.getByRole("button", { name: "Mark paid" })).toHaveCount(0);
+  // Settled: the line now says what was earned and what was paid, and owes nothing.
+  await expect(payouts.getByText(/earned,.*paid$/)).toBeVisible();
 
   // Ending it takes the revenue out of the run rate and puts a reason next to the loss.
   await page.getByRole("link", { name: "Rivera Dental" }).click();
