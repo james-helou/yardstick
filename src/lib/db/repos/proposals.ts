@@ -3,6 +3,7 @@ import { orderByFragment, pageWindow, type ListQuery, type PageWindow } from "@/
 import { termsFingerprint } from "@/lib/proposals/fingerprint";
 import { quote, snapshotOf, type Billing, type Quote, type QuoteLine } from "@/lib/proposals/quote";
 import { db } from "../client";
+import { isUuid } from "../uuid";
 import { requireOrg, type OrgScope } from "../scope";
 
 export type ProposalStatus = "draft" | "sent" | "accepted" | "declined" | "expired";
@@ -164,6 +165,7 @@ export async function createProposal(scope: OrgScope, input: ProposalInput): Pro
 
 export async function getProposal(scope: OrgScope, id: string): Promise<Proposal | null> {
   const orgId = requireOrg(scope);
+  if (!isUuid(id)) return null;
   const [row] = await db()<Row[]>`
     select p.*, b.name as business_name
       from proposals p
@@ -445,4 +447,19 @@ export async function listAwaitingAnswer(scope: OrgScope): Promise<Proposal[]> {
      order by p.sent_at asc
   `;
   return rows.map(toProposal);
+}
+
+/**
+ * When this business first became a client: the earliest accepted proposal. This is the
+ * anchor a client's own trend is measured from, so "what have I got since I signed" is
+ * answered from the day they signed rather than from whatever the agency measured first.
+ */
+export async function signedSince(scope: OrgScope, businessId: string): Promise<Date | null> {
+  const orgId = requireOrg(scope);
+  const [row] = await db()<{ signed_at: Date | null }[]>`
+    select min(coalesce(decided_at, sent_at)) as signed_at
+      from proposals
+     where org_id = ${orgId} and business_id = ${businessId} and status = 'accepted'
+  `;
+  return row?.signed_at ? new Date(row.signed_at) : null;
 }

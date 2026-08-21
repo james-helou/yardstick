@@ -9,6 +9,7 @@ export const TEMPLATES = {
   reportReady: "report_ready",
   newLead: "new_lead",
   proposalDecided: "proposal_decided",
+  portalInvite: "portal_invite",
 } as const;
 
 export type TemplateName = (typeof TEMPLATES)[keyof typeof TEMPLATES];

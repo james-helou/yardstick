@@ -17,6 +17,7 @@ import {
   quoteOf,
   removeProposalLine,
   sendProposal,
+  signedSince,
   updateProposal,
   updateProposalLine,
 } from "./proposals";
@@ -205,5 +206,48 @@ describe("the proposal list", () => {
     expect(await listProposalLines(other, proposalId)).toEqual([]);
     expect((await listProposals(other, query)).rows).toEqual([]);
     expect(await sendProposal(other, proposalId)).toEqual({ ok: false, reason: "not_found" });
+  });
+});
+
+describe("when a business became a client", () => {
+  it("is the day the first proposal was accepted", async () => {
+    const { scope, business, proposalId } = await draftWithLines();
+    expect(await signedSince(scope, business.id)).toBeNull();
+
+    await sendProposal(scope, proposalId);
+    // Sent is not signed: a client who has been quoted has not become a client.
+    expect(await signedSince(scope, business.id)).toBeNull();
+
+    const decided = await decideProposal(scope, proposalId, "accepted");
+    const since = await signedSince(scope, business.id);
+    expect(since!.getTime()).toBe(decided!.decidedAt!.getTime());
+  });
+
+  it("stays on the first acceptance when a second deal is signed later", async () => {
+    const { scope, business, proposalId } = await draftWithLines();
+    await sendProposal(scope, proposalId);
+    await decideProposal(scope, proposalId, "accepted");
+    const first = await signedSince(scope, business.id);
+
+    const second = await createProposal(scope, {
+      title: "An upsell",
+      currency: "CAD",
+      businessId: business.id,
+    });
+    await addProposalLine(scope, second.id, { name: "More", billing: "monthly", unitPrice: cad(50_000) });
+    await sendProposal(scope, second.id);
+    await decideProposal(scope, second.id, "accepted");
+
+    expect(await signedSince(scope, business.id)).toEqual(first);
+  });
+
+  it("ignores a declined proposal, and another workspace's acceptance", async () => {
+    const { scope, business, proposalId } = await draftWithLines();
+    await sendProposal(scope, proposalId);
+    await decideProposal(scope, proposalId, "declined");
+    expect(await signedSince(scope, business.id)).toBeNull();
+
+    const { scope: other } = await agency("agency-b");
+    expect(await signedSince(other, business.id)).toBeNull();
   });
 });

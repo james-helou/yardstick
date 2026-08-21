@@ -31,6 +31,7 @@ const TENANT_TABLE_OWNERS: Record<string, string> = {
   proposal_events: "src/lib/db/repos/proposal-sharing.ts",
   proposal_signatures: "src/lib/db/repos/proposal-sharing.ts",
   scan_schedules: "src/lib/db/repos/schedules.ts",
+  portal_grants: "src/lib/db/repos/portal.ts",
 };
 
 /**
@@ -64,6 +65,13 @@ const ALLOWED_READS: Record<string, { table: string; because: string }[]> = {
       table: "businesses",
       because:
         "a proposal is read and searched by the prospect it is for, and every join carries the same org_id filter on both sides",
+    },
+  ],
+  "src/lib/db/repos/portal.ts": [
+    {
+      table: "businesses",
+      because:
+        "an invitation is created by selecting from businesses under the same org_id, and a client's own list joins the business each grant names with the org_id carried on the grant itself",
     },
   ],
   "src/lib/db/repos/schedules.ts": [

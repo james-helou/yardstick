@@ -2,6 +2,7 @@ import type { BusinessInput, BusinessStatus } from "@/lib/businesses/schema";
 import { BUSINESS_STATUSES, parseBusinessInput } from "@/lib/businesses/schema";
 import { orderByFragment, pageWindow, type ListQuery, type PageWindow } from "@/lib/list/query";
 import { db } from "../client";
+import { isUuid } from "../uuid";
 import { requireOrg, type OrgScope } from "../scope";
 
 export type BusinessSort = "name" | "status" | "createdAt";
@@ -115,6 +116,8 @@ export async function createBusiness(
 
 export async function getBusiness(scope: OrgScope, id: string): Promise<Business | null> {
   const orgId = requireOrg(scope);
+  // A path segment that is not an id is not a row, and must not reach the driver.
+  if (!isUuid(id)) return null;
   const rows = await db()<Row[]>`
     select ${db().unsafe(COLUMNS)} from businesses
      where org_id = ${orgId} and id = ${id}

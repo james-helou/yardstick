@@ -12,6 +12,10 @@ import {
   setSchedule,
   stopSchedule,
 } from "@/lib/db/repos/schedules";
+import { inviteToPortal, revokeGrant } from "@/lib/db/repos/portal";
+import { deliver } from "@/lib/email";
+import { portalInviteEmail } from "@/lib/email/portal-templates";
+import { absoluteUrl } from "@/lib/http/origin";
 import { isCadence } from "@/lib/tracking/cadence";
 import type { FormState } from "@/lib/forms/state";
 
@@ -101,5 +105,41 @@ export async function stopTrackingAction(formData: FormData): Promise<void> {
   if (!businessId) return;
 
   await stopSchedule(scope, businessId);
+  revalidatePath(`/businesses/${businessId}`);
+}
+
+/**
+ * Invites one address to see one business. The email itself is best effort: an invitation
+ * that could not be sent is still an invitation, and the link is on the screen either way.
+ */
+export async function inviteClientAction(formData: FormData): Promise<void> {
+  const { scope, user, org } = await resolveWorkspace(await headers());
+  const businessId = String(formData.get("businessId") ?? "");
+  const email = String(formData.get("email") ?? "").trim();
+  if (!businessId || !email.includes("@")) return;
+
+  const grant = await inviteToPortal(scope, { businessId, email, invitedBy: user.id });
+  if (!grant) return;
+
+  const requestHeaders = await headers();
+  const link = absoluteUrl(requestHeaders, `/portal/join/${grant.token}`);
+  await deliver(scope, portalInviteEmail({
+    to: grant.email,
+    agencyName: org.name,
+    businessName: grant.businessName,
+    joinUrl: link,
+    replyTo: user.email,
+  }));
+
+  revalidatePath(`/businesses/${businessId}`);
+}
+
+export async function revokeClientAccessAction(formData: FormData): Promise<void> {
+  const { scope } = await resolveWorkspace(await headers());
+  const grantId = String(formData.get("grantId") ?? "");
+  const businessId = String(formData.get("businessId") ?? "");
+  if (!grantId) return;
+
+  await revokeGrant(scope, grantId);
   revalidatePath(`/businesses/${businessId}`);
 }

@@ -2,20 +2,24 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { ScoreBadge } from "@/components/scan";
-import { TrackingPanel, TrendPanel } from "@/components/tracking";
+import { ClientAccess, TrackingPanel, TrendPanel } from "@/components/tracking";
 import { resolveWorkspace } from "@/lib/auth/workspace";
 import { getBusiness } from "@/lib/db/repos/businesses";
+import { listGrantsForBusiness } from "@/lib/db/repos/portal";
 import { getSchedule } from "@/lib/db/repos/schedules";
 import { listScans, SCAN_LIST_SPEC, type ScanSort } from "@/lib/db/repos/scans";
+import { absoluteUrl } from "@/lib/http/origin";
 import { trendFor } from "@/lib/tracking/history";
 import { parseListQuery } from "@/lib/list/query";
 import { runScanAction } from "../../scans/actions";
 import { RunScanButton } from "../../scans/RunScanButton";
 import { SCAN_STATUS_LABEL } from "../../scans/page";
 import {
+  inviteClientAction,
   pauseTrackingAction,
   resumeTrackingAction,
   setTrackingAction,
+  revokeClientAccessAction,
   stopTrackingAction,
   updateBusinessAction,
 } from "../actions";
@@ -40,9 +44,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
     { businessId: business.id },
   );
 
-  const [schedule, trend] = await Promise.all([
+  const requestHeaders = await headers();
+  const [schedule, trend, grants] = await Promise.all([
     getSchedule(scope, business.id),
     trendFor(scope, business.id),
+    listGrantsForBusiness(scope, business.id),
   ]);
 
   const place = [business.addressLine, business.locality, business.region, business.postalCode, business.country]
@@ -76,6 +82,14 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
           stop={stopTrackingAction}
         />
       </div>
+
+      <ClientAccess
+        businessId={business.id}
+        grants={grants}
+        linkFor={(token) => absoluteUrl(requestHeaders, `/portal/join/${token}`)}
+        invite={inviteClientAction}
+        revoke={revokeClientAccessAction}
+      />
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">

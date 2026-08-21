@@ -2,6 +2,7 @@ import { orderByFragment, pageWindow, type ListQuery, type PageWindow } from "@/
 import { PILLARS, type Pillar } from "@/lib/scans/pillars";
 import { overallScore, type Finding, type PillarOutcome, type PillarStatus } from "@/lib/scans/score";
 import { db } from "../client";
+import { isUuid } from "../uuid";
 import { requireOrg, type OrgScope } from "../scope";
 
 export type ScanStatus = "queued" | "running" | "complete" | "failed";
@@ -120,6 +121,7 @@ export async function createScan(
 
 export async function getScan(scope: OrgScope, id: string): Promise<ScanListRow | null> {
   const orgId = requireOrg(scope);
+  if (!isUuid(id)) return null;
   const rows = await db()<ScanRow[]>`
     select ${db().unsafe(SCAN_COLUMNS)}, b.name as business_name
       from scans s join businesses b on b.id = s.business_id
