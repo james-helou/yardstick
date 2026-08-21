@@ -17,14 +17,14 @@ export default async function WidgetPage() {
     <section className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-semibold">Website widget</h1>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-ink-muted">
           Drop this on your own site and every visitor who asks for an audit arrives here already
           scored, with their report waiting.
         </p>
       </div>
 
       {emailConfigured() ? null : (
-        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <p className="rounded-md border border-band-fair-line bg-band-fair-soft px-3 py-2 text-band-fair">
           Email is not switched on yet, so a visitor sees their report on screen but does not receive
           it, and you are not notified. Set <code>RESEND_API_KEY</code> and <code>EMAIL_FROM</code> to
           turn it on. Leads are still captured either way.

@@ -55,7 +55,7 @@ export function BusinessForm({
           id="status"
           name="status"
           defaultValue={defaults.status ?? "prospect"}
-          className="rounded border px-3 py-2 text-sm"
+          className="control"
         >
           {BUSINESS_STATUSES.map((status) => (
             <option key={status} value={status}>

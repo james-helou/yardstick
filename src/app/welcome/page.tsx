@@ -13,7 +13,7 @@ export default function WelcomePage() {
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-6 py-16">
       <div>
         <h1 className="text-xl font-semibold">One more thing</h1>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-ink-muted">
           Name the workspace your prospects and scans will live in.
         </p>
       </div>

@@ -41,11 +41,11 @@ export function Checklist({
   const ended = engagement.status === "ended";
 
   return (
-    <section className="rounded-md border p-4" aria-label={`Delivery for ${engagement.businessName ?? "this client"}`}>
+    <section className="panel panel-pad" aria-label={`Delivery for ${engagement.businessName ?? "this client"}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold">Delivery</h2>
-          <p className="mt-0.5 text-sm text-neutral-600">
+          <h2 className="section-title">Delivery</h2>
+          <p className="mt-0.5 text-sm text-ink-muted">
             {ended
               ? `Ended ${day(engagement.endedAt)}${engagement.endedReason ? `. ${engagement.endedReason}` : "."}`
               : `Signed ${day(engagement.startedAt)}.`}
@@ -53,26 +53,26 @@ export function Checklist({
             {engagement.oneTime.amount > 0 ? ` ${formatMoney(engagement.oneTime)} once.` : ""}
           </p>
         </div>
-        <p className="text-sm tabular-nums text-neutral-600">
+        <p className="text-sm tabular-nums text-ink-muted">
           {progress.done} of {progress.total} done
         </p>
       </div>
 
       <div
-        className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-neutral-200"
+        className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-line"
         role="progressbar"
         aria-valuenow={progress.percent}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-label="Delivery progress"
       >
-        <div className="h-full bg-neutral-800" style={{ width: `${progress.percent}%` }} />
+        <div className="h-full bg-ink" style={{ width: `${progress.percent}%` }} />
       </div>
 
       {items.length === 0 ? (
-        <p className="mt-3 text-sm text-neutral-600">Nothing on the list yet.</p>
+        <p className="mt-3 text-sm text-ink-muted">Nothing on the list yet.</p>
       ) : (
-        <ul className="mt-3 flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200">
+        <ul className="panel mt-3 flex flex-col divide-y divide-line">
           {items.map((item) => {
             const late =
               item.status !== "done" && item.dueAt !== null && item.dueAt.getTime() < now.getTime();
@@ -80,11 +80,11 @@ export function Checklist({
               <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
                 <div className="min-w-0">
                   <p
-                    className={`truncate text-sm ${item.status === "done" ? "text-neutral-500 line-through" : "font-medium"}`}
+                    className={`truncate text-sm ${item.status === "done" ? "text-ink-faint line-through" : "font-medium"}`}
                   >
                     {item.title}
                   </p>
-                  <p className="text-xs text-neutral-600">
+                  <p className="text-xs text-ink-muted">
                     {WORK_KIND_LABEL[item.kind]}
                     {item.dueAt ? ` · due ${day(item.dueAt)}` : ""}
                     {late ? " · overdue" : ""}
@@ -95,7 +95,7 @@ export function Checklist({
                   <input type="hidden" name="status" value={NEXT[item.status]} />
                   <button
                     type="submit"
-                    className="rounded border px-3 py-1.5 text-xs font-medium hover:bg-neutral-50 focus:outline-2 focus:outline-offset-2"
+                    className="btn btn-secondary btn-sm"
                   >
                     {ADVANCE_LABEL[item.status]}
                   </button>
@@ -116,12 +116,12 @@ export function Checklist({
             id={`work-${engagement.id}`}
             name="title"
             placeholder="Rewrite the services page"
-            className="w-full rounded border px-3 py-2 text-sm focus:outline-2 focus:outline-offset-2"
+            className="control"
           />
         </div>
         <button
           type="submit"
-          className="rounded border px-3 py-2 text-sm font-medium hover:bg-neutral-50 focus:outline-2 focus:outline-offset-2"
+          className="btn btn-secondary"
         >
           Add
         </button>
@@ -132,7 +132,7 @@ export function Checklist({
           <input type="hidden" name="engagementId" value={engagement.id} />
           <button
             type="submit"
-            className="rounded border px-3 py-1.5 text-xs font-medium hover:bg-neutral-50 focus:outline-2 focus:outline-offset-2"
+            className="btn btn-secondary btn-sm"
           >
             Won back
           </button>
@@ -148,12 +148,12 @@ export function Checklist({
               id={`why-${engagement.id}`}
               name="reason"
               placeholder="Why they left"
-              className="w-full rounded border px-3 py-2 text-sm focus:outline-2 focus:outline-offset-2"
+              className="control"
             />
           </div>
           <button
             type="submit"
-            className="rounded border px-3 py-2 text-sm font-medium hover:bg-neutral-50 focus:outline-2 focus:outline-offset-2"
+            className="btn btn-secondary"
           >
             End
           </button>

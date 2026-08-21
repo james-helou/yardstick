@@ -34,7 +34,7 @@ export function ListShell({
   children,
 }: ListShellProps) {
   return (
-    <section className="flex flex-col gap-6">
+    <section className="flex flex-col gap-5 sm:gap-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">{title}</h1>
         {action}
@@ -47,7 +47,7 @@ export function ListShell({
         <EmptyState noun={noun} search={search} action={action} />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-md border">{children}</div>
+          <div className="table-scroll panel">{children}</div>
           <Pagination window={w} noun={noun} href={href} />
         </>
       )}

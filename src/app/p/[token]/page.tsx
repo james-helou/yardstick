@@ -60,43 +60,54 @@ export default async function PublicProposalPage({ params }: { params: Promise<{
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10">
       <header>
         <h1 className="text-2xl font-semibold">{proposal.title}</h1>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-ink-muted">
           {proposal.businessName ? `Prepared for ${proposal.businessName}. ` : ""}
           {agency ? `From ${agency.name}.` : ""}
         </p>
       </header>
 
-      <div className="overflow-x-auto rounded-md border">
-        <table className="w-full text-sm">
-          <thead className="border-b bg-neutral-50">
+      <div className="table-scroll panel">
+        <table className="list-table list-table-fit">
+          <thead>
             <tr>
-              <th scope="col" className="px-3 py-2 text-left font-medium">
+              <th scope="col">
                 What you get
               </th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">
+              <th scope="col" className="hidden text-right sm:table-cell">
                 Qty
               </th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">
+              <th scope="col" className="hidden text-right sm:table-cell">
                 Price
               </th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">
+              <th scope="col" className="text-right">
                 Total
               </th>
             </tr>
           </thead>
           <tbody>
             {live.lines.map((line) => (
-              <tr key={line.key} className="border-b last:border-0">
+              <tr key={line.key}>
                 <td className="px-3 py-2">
                   <span className="font-medium">{line.name}</span>
-                  <span className="block text-xs text-neutral-600">
+                  <span className="block text-xs text-ink-muted">
                     {line.billing === "monthly" ? "Every month" : "One time"}
                     {line.discountPercent ? ` · ${line.discountPercent}% off` : ""}
                   </span>
+                  {/* The two columns the phone drops, said in words under the name. */}
+                  <span className="block text-xs text-ink-muted sm:hidden">
+                    <span className="data">{line.quantity}</span> ×{" "}
+                    <span className="data">{formatMoney(line.unitPrice)}</span>
+                  </span>
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums">{line.quantity}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{formatMoney(line.unitPrice)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{formatMoney(line.net)}</td>
+                <td className="hidden text-right sm:table-cell">
+                  <span className="data">{line.quantity}</span>
+                </td>
+                <td className="hidden text-right sm:table-cell">
+                  <span className="data">{formatMoney(line.unitPrice)}</span>
+                </td>
+                <td className="text-right">
+                  <span className="data">{formatMoney(line.net)}</span>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -106,25 +117,25 @@ export default async function PublicProposalPage({ params }: { params: Promise<{
       <QuoteTotals totals={totals} />
 
       {proposal.notes ? (
-        <div className="rounded-md border p-4 text-sm">
-          <h2 className="font-semibold">Notes</h2>
-          <p className="mt-1 whitespace-pre-line text-neutral-700">{proposal.notes}</p>
+        <div className="panel panel-pad">
+          <h2 className="section-title">Notes</h2>
+          <p className="mt-1 whitespace-pre-line text-ink">{proposal.notes}</p>
         </div>
       ) : null}
 
       {signature ? (
-        <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-          <h2 className="font-semibold">Signed</h2>
+        <div className="rounded-md border border-band-strong-line bg-band-strong-soft p-4 text-band-strong">
+          <h2 className="section-title">Signed</h2>
           <p className="mt-1">
             {signature.signerName} accepted these terms on {signature.signedAt.toISOString().slice(0, 10)}.
           </p>
-          <p className="mt-2 text-xs text-emerald-800">
+          <p className="mt-2 text-xs text-band-strong">
             Reference {shortFingerprint(signature.termsFingerprint)}. It covers every line, price and month
             on this page, so this copy can always be checked against what was signed.
           </p>
         </div>
       ) : answered ? (
-        <p className="rounded-md border px-3 py-2 text-sm text-neutral-600">
+        <p className="panel px-3 py-2 text-ink-muted">
           This proposal has already been answered.
         </p>
       ) : (
@@ -132,7 +143,7 @@ export default async function PublicProposalPage({ params }: { params: Promise<{
       )}
 
       {proposal.termsFingerprint ? (
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-ink-faint">
           Terms reference {shortFingerprint(proposal.termsFingerprint)}, fixed when this was sent.
         </p>
       ) : null}

@@ -1,26 +1,571 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+ * Tokens. Every colour, size and radius in the product comes from here.
+ * Light is the default because the tool gets turned around on a desk in a bright
+ * room; dark is a second design that follows the OS, not an inversion.
+ * Rationale, and the rules that keep this consistent, live in DESIGN.md.
+ * ------------------------------------------------------------------------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* Cool graphite neutrals. The tint is deliberately toward blue so that brass
+   * and the score colours are the only warmth on screen, and both read as signal. */
+  --bg: oklch(0.985 0.002 258);
+  --surface: oklch(1 0 0);
+  --surface-2: oklch(0.966 0.004 258);
+  --line: oklch(0.906 0.006 258);
+  --line-strong: oklch(0.845 0.008 258);
+  --ink: oklch(0.225 0.015 258);
+  --ink-muted: oklch(0.465 0.012 258);
+  --ink-faint: oklch(0.575 0.01 258);
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Brass is structure, never state: the wordmark, tick marks, the current nav
+   * item, the focus ring, the rule on a section heading. Nothing else. */
+  --brass: oklch(0.605 0.098 70);
+  --brass-ink: oklch(0.475 0.085 68);
+  --brass-soft: oklch(0.955 0.028 74);
+
+  /* The primary action is always the highest-contrast thing available, which
+   * means it inverts between themes. */
+  --action: oklch(0.255 0.02 258);
+  --action-hover: oklch(0.34 0.02 258);
+  --action-ink: oklch(0.99 0 0);
+
+  /* Readings. These four are spent on score bands and status, and on nothing else. */
+  --strong: oklch(0.45 0.115 152);
+  --strong-soft: oklch(0.958 0.032 152);
+  --strong-line: oklch(0.86 0.06 152);
+  --fair: oklch(0.455 0.1 85);
+  --fair-soft: oklch(0.962 0.042 85);
+  --fair-line: oklch(0.865 0.07 85);
+  --weak: oklch(0.48 0.13 45);
+  --weak-soft: oklch(0.962 0.04 45);
+  --weak-line: oklch(0.87 0.075 45);
+  --critical: oklch(0.475 0.16 25);
+  --critical-soft: oklch(0.962 0.035 25);
+  --critical-line: oklch(0.875 0.07 25);
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --shadow-1: 0 1px 2px oklch(0.2 0.02 258 / 0.06), 0 8px 24px oklch(0.2 0.02 258 / 0.08);
+
+  --dur-1: 120ms;
+  --dur-2: 180ms;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: oklch(0.186 0.008 258);
+    --surface: oklch(0.225 0.009 258);
+    --surface-2: oklch(0.262 0.01 258);
+    --line: oklch(0.318 0.012 258);
+    --line-strong: oklch(0.4 0.014 258);
+    --ink: oklch(0.945 0.004 258);
+    --ink-muted: oklch(0.735 0.008 258);
+    --ink-faint: oklch(0.64 0.008 258);
+
+    --brass: oklch(0.735 0.098 74);
+    --brass-ink: oklch(0.8 0.09 76);
+    --brass-soft: oklch(0.3 0.032 70);
+
+    --action: oklch(0.935 0.005 258);
+    --action-hover: oklch(0.86 0.006 258);
+    --action-ink: oklch(0.2 0.01 258);
+
+    --strong: oklch(0.79 0.13 152);
+    --strong-soft: oklch(0.29 0.045 152);
+    --strong-line: oklch(0.42 0.07 152);
+    --fair: oklch(0.83 0.12 85);
+    --fair-soft: oklch(0.3 0.04 85);
+    --fair-line: oklch(0.44 0.065 85);
+    --weak: oklch(0.78 0.13 45);
+    --weak-soft: oklch(0.3 0.045 45);
+    --weak-line: oklch(0.44 0.075 45);
+    --critical: oklch(0.75 0.15 25);
+    --critical-soft: oklch(0.3 0.05 25);
+    --critical-line: oklch(0.44 0.08 25);
+
+    --shadow-1: 0 1px 2px oklch(0 0 0 / 0.4), 0 8px 24px oklch(0 0 0 / 0.35);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-brass: var(--brass);
+  --color-brass-ink: var(--brass-ink);
+  --color-brass-soft: var(--brass-soft);
+  --color-action: var(--action);
+  --color-action-ink: var(--action-ink);
+
+  --color-band-strong: var(--strong);
+  --color-band-strong-soft: var(--strong-soft);
+  --color-band-strong-line: var(--strong-line);
+  --color-band-fair: var(--fair);
+  --color-band-fair-soft: var(--fair-soft);
+  --color-band-fair-line: var(--fair-line);
+  --color-band-weak: var(--weak);
+  --color-band-weak-soft: var(--weak-soft);
+  --color-band-weak-line: var(--weak-line);
+  --color-band-critical: var(--critical);
+  --color-band-critical-soft: var(--critical-soft);
+  --color-band-critical-line: var(--critical-line);
+
+  /* Anything still reaching for a stock neutral lands on the graphite ramp, so a
+   * missed sweep degrades to the right colour in both themes rather than to a
+   * light grey burned into a dark page. */
+  --color-neutral-50: var(--surface-2);
+  --color-neutral-100: var(--surface-2);
+  --color-neutral-200: var(--line);
+  --color-neutral-300: var(--line-strong);
+  --color-neutral-400: var(--ink-faint);
+  --color-neutral-500: var(--ink-faint);
+  --color-neutral-600: var(--ink-muted);
+  --color-neutral-700: var(--ink-muted);
+  --color-neutral-800: var(--ink);
+  --color-neutral-900: var(--ink);
+
+  /* Fixed rem scale, ratio about 1.18. Product UI is read at a consistent
+   * distance, so nothing here is fluid. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.45;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.45;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.55;
+  --text-md: 1rem;
+  --text-md--line-height: 1.6;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.4;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.3;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 1.2;
+  --text-3xl: 2.25rem;
+  --text-3xl--line-height: 1.15;
+
+  --radius-sm: var(--r-sm);
+  --radius: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-md);
+
+  --shadow-panel: var(--shadow-1);
+
+  --font-sans:
+    var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial,
+    sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ---------------------------------------------------------------------------
+ * Base
+ * ------------------------------------------------------------------------- */
+/* Everything here is in the base layer so the component vocabulary below can override
+ * it. Unlayered rules beat layered ones, and a stray `border-color` on `*` that wins
+ * against a component is how transparent borders start showing up. */
+@layer base {
+  /* Tailwind 4 defaults a bare `border` to currentColor, which paints hairlines in the
+   * text colour. Every unqualified border in the product means the same thing, so it
+   * gets the same token. */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--line);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.55;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    letter-spacing: -0.011em;
+  }
+
+  ::selection {
+    background: var(--brass-soft);
+    color: var(--ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 2px;
+  }
+
+  ::placeholder {
+    color: var(--ink-faint);
+    opacity: 1;
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Component vocabulary. Defined once so two buttons cannot drift apart.
+ * ------------------------------------------------------------------------- */
+@layer components {
+  /* Buttons ---------------------------------------------------------------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 2.25rem;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background-color var(--dur-1) var(--ease),
+      border-color var(--dur-1) var(--ease),
+      color var(--dur-1) var(--ease);
+  }
+
+  .btn-primary {
+    background: var(--action);
+    color: var(--action-ink);
+  }
+  .btn-primary:hover {
+    background: var(--action-hover);
+  }
+  .btn-primary:active {
+    background: var(--action);
+  }
+
+  .btn-secondary {
+    background: var(--surface);
+    border-color: var(--line-strong);
+    color: var(--ink);
+  }
+  .btn-secondary:hover {
+    background: var(--surface-2);
+    border-color: var(--ink-faint);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-muted);
+  }
+  .btn-ghost:hover {
+    background: var(--surface-2);
+    color: var(--ink);
+  }
+
+  .btn-danger {
+    background: var(--surface);
+    border-color: var(--critical-line);
+    color: var(--critical);
+  }
+  .btn-danger:hover {
+    background: var(--critical-soft);
+  }
+
+  .btn-sm {
+    min-height: 1.875rem;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Anything tappable clears 44px where the pointer is a thumb. */
+  @media (pointer: coarse) {
+    .btn {
+      min-height: 2.75rem;
+    }
+    .btn-sm {
+      min-height: 2.25rem;
+    }
+  }
+
+  /* Controls --------------------------------------------------------------- */
+  .control {
+    width: 100%;
+    min-height: 2.25rem;
+    padding: 0.4rem 0.6rem;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm);
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    transition:
+      border-color var(--dur-1) var(--ease),
+      background-color var(--dur-1) var(--ease);
+  }
+  .control:hover:not(:disabled) {
+    border-color: var(--ink-faint);
+  }
+  .control:disabled {
+    background: var(--surface-2);
+    color: var(--ink-faint);
+    cursor: not-allowed;
+  }
+  .control[aria-invalid="true"] {
+    border-color: var(--critical);
+  }
+  textarea.control {
+    min-height: 5rem;
+    resize: vertical;
+  }
+  @media (pointer: coarse) {
+    .control {
+      min-height: 2.75rem;
+      /* 16px stops iOS Safari zooming the viewport on focus. */
+      font-size: 1rem;
+    }
+  }
+
+  /* Surfaces --------------------------------------------------------------- */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+  }
+  .panel-pad {
+    padding: 1rem;
+  }
+  @media (min-width: 640px) {
+    .panel-pad {
+      padding: 1.25rem;
+    }
+  }
+
+  /* A heading with its brass rule. Replaces the uppercase tracked eyebrow. */
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--ink);
+  }
+  .section-title::before {
+    content: "";
+    flex: none;
+    width: 1.125rem;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--brass);
+  }
+
+  /* Chips ------------------------------------------------------------------ */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.1rem 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--ink-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.5;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .chip-strong {
+    background: var(--strong-soft);
+    border-color: var(--strong-line);
+    color: var(--strong);
+  }
+  .chip-fair {
+    background: var(--fair-soft);
+    border-color: var(--fair-line);
+    color: var(--fair);
+  }
+  .chip-weak {
+    background: var(--weak-soft);
+    border-color: var(--weak-line);
+    color: var(--weak);
+  }
+  .chip-critical {
+    background: var(--critical-soft);
+    border-color: var(--critical-line);
+    color: var(--critical);
+  }
+
+  /* Data ------------------------------------------------------------------- */
+  .data {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* Lists ----------------------------------------------------------------- */
+  .list-table {
+    width: 100%;
+    /* Below this the columns start breaking values across lines, which is worse than
+     * sideways scroll: a date split after the month reads as two numbers. */
+    min-width: 34rem;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+  }
+  .list-table thead {
+    background: var(--surface-2);
+  }
+  .list-table thead th {
+    border-bottom: 1px solid var(--line);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--ink-muted);
+    text-align: left;
+    white-space: nowrap;
+  }
+  .list-table thead th.text-right {
+    text-align: right;
+  }
+  .list-table th,
+  .list-table td {
+    padding: 0.55rem 0.75rem;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  /* The name is the one column allowed to wrap; everything else is a short value. */
+  .list-table td:first-child {
+    white-space: normal;
+  }
+  /* For a table that drops columns on a phone instead of scrolling: the quote a client
+   * reads has to be complete at 390px, not merely reachable. */
+  .list-table-fit {
+    min-width: 0;
+  }
+  .list-table tbody tr + tr {
+    border-top: 1px solid var(--line);
+  }
+  .list-table tbody tr {
+    transition: background-color var(--dur-1) var(--ease);
+  }
+  .list-table tbody tr:hover {
+    background: var(--surface-2);
+  }
+  .list-table td:first-child,
+  .list-table th:first-child {
+    padding-left: 1rem;
+  }
+  .list-table td:last-child,
+  .list-table th:last-child {
+    padding-right: 1rem;
+  }
+
+  .table-scroll {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface-2) 0%, var(--line) 50%, var(--surface-2) 100%);
+    background-size: 200% 100%;
+    animation: skeleton 1.4s var(--ease) infinite;
+    border-radius: var(--r-sm);
+  }
+  @keyframes skeleton {
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Navigation ------------------------------------------------------------- */
+  .nav-strip {
+    display: flex;
+    align-items: stretch;
+    gap: 0.125rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+  .nav-strip::-webkit-scrollbar {
+    display: none;
+  }
+  .nav-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 0.6rem;
+    border-bottom: 2px solid transparent;
+    color: var(--ink-muted);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color var(--dur-1) var(--ease);
+  }
+  .nav-link:hover {
+    color: var(--ink);
+  }
+  .nav-link[aria-current="page"] {
+    color: var(--ink);
+    border-bottom-color: var(--brass);
+  }
+
+  /* A way back out of a detail page. The arrow is the affordance, so it is part of
+   * the class rather than something each page remembers to type. */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 1.75rem;
+    color: var(--ink-muted);
+    font-size: 0.75rem;
+    transition: color var(--dur-1) var(--ease);
+  }
+  .back-link::before {
+    content: "\2190";
+    color: var(--brass);
+  }
+  .back-link:hover {
+    color: var(--ink);
+  }
+
+  /* Links ------------------------------------------------------------------ */
+  .link {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--line-strong);
+    text-underline-offset: 0.2em;
+    transition: text-decoration-color var(--dur-1) var(--ease);
+  }
+  .link:hover {
+    text-decoration-color: var(--brass);
+  }
 }

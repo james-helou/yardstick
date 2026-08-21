@@ -24,21 +24,21 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
         <h1 className="text-xl font-semibold">
           {grant.businessName ? `Results for ${grant.businessName}` : "Your results"}
         </h1>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-ink-muted">
           Sent to {grant.email}. This shows how this business is doing in local search, and nothing
           else.
         </p>
       </div>
 
       {session?.user ? (
-        <form action={acceptInvitationAction} className="flex flex-col gap-3 rounded-md border p-4">
+        <form action={acceptInvitationAction} className="flex flex-col gap-3 panel panel-pad">
           <input type="hidden" name="token" value={token} />
           <p className="text-sm">
             Signed in as {session.user.email}. Open it to see where this business stands.
           </p>
           <button
             type="submit"
-            className="rounded bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700"
+            className="btn btn-primary"
           >
             Open my results
           </button>

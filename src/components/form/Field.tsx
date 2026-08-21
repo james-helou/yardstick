@@ -39,10 +39,10 @@ export function Field({
     .join(" ");
 
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={fieldId} className="text-sm font-medium">
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={fieldId} className="text-xs font-medium text-ink-muted">
         {label}
-        {required ? <span className="text-neutral-500"> (required)</span> : null}
+        {required ? <span className="text-ink-faint"> (required)</span> : null}
       </label>
 
       {children ?? (
@@ -56,17 +56,17 @@ export function Field({
           autoComplete={autoComplete}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy || undefined}
-          className="rounded border px-3 py-2 text-sm focus:outline-2 focus:outline-offset-2"
+          className="control"
         />
       )}
 
       {hint ? (
-        <p id={`${fieldId}-hint`} className="text-xs text-neutral-500">
+        <p id={`${fieldId}-hint`} className="text-xs text-ink-faint">
           {hint}
         </p>
       ) : null}
       {error ? (
-        <p id={`${fieldId}-error`} className="text-xs font-medium text-red-700">
+        <p id={`${fieldId}-error`} className="text-xs font-medium text-band-critical">
           {error}
         </p>
       ) : null}

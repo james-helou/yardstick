@@ -11,8 +11,8 @@ export function CatalogForm({ action, currency }: { action: Action; currency: st
   const [state, formAction] = useActionState(action, EMPTY_FORM_STATE);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4 rounded-md border p-4">
-      <h2 className="text-sm font-semibold">Add to the catalogue</h2>
+    <form action={formAction} className="panel panel-pad flex flex-col gap-4">
+      <h2 className="section-title">Add to the catalogue</h2>
       <FormError message={state.errors.form} />
 
       <input type="hidden" name="currency" value={currency} />
@@ -32,7 +32,7 @@ export function CatalogForm({ action, currency }: { action: Action; currency: st
             id="billing"
             name="billing"
             defaultValue="monthly"
-            className="rounded border px-3 py-2 text-sm focus:outline-2 focus:outline-offset-2"
+            className="control"
           >
             <option value="monthly">Every month</option>
             <option value="one_time">One time</option>

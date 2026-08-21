@@ -17,16 +17,16 @@ export type EmptyStateProps = {
 export function EmptyState({ noun, search, onClearSearch, action }: EmptyStateProps) {
   if (search) {
     return (
-      <div className="rounded-md border border-dashed p-8 text-center text-sm">
+      <div className="rounded-md border border-dashed border-line-strong px-6 py-10 text-center">
         <p className="font-medium">
           No {noun} match “{search}”.
         </p>
-        <p className="mt-1 text-neutral-600">Try a shorter term, or check the spelling.</p>
+        <p className="mt-1 text-ink-muted">Try a shorter term, or check the spelling.</p>
         {onClearSearch ? (
           <button
             type="button"
             onClick={onClearSearch}
-            className="mt-3 rounded border px-3 py-1 font-medium hover:bg-neutral-50"
+            className="btn btn-secondary btn-sm mt-4"
           >
             Clear search
           </button>
@@ -36,10 +36,10 @@ export function EmptyState({ noun, search, onClearSearch, action }: EmptyStatePr
   }
 
   return (
-    <div className="rounded-md border border-dashed p-8 text-center text-sm">
+    <div className="rounded-md border border-dashed border-line-strong px-6 py-10 text-center">
       <p className="font-medium">No {noun} yet.</p>
-      <p className="mt-1 text-neutral-600">They will appear here as soon as there are any.</p>
-      {action ? <div className="mt-3">{action}</div> : null}
+      <p className="mt-1 text-ink-muted">They will appear here as soon as there are any.</p>
+      {action ? <div className="mt-4">{action}</div> : null}
     </div>
   );
 }

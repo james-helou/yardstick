@@ -4,9 +4,22 @@ import { redirect } from "next/navigation";
 import { signOut } from "@/lib/auth/actions";
 import { NoWorkspaceError, resolveWorkspace } from "@/lib/auth/workspace";
 import { APP_NAME } from "@/lib/version";
+import { Mark } from "@/components/app/Mark";
+import { NavLink } from "@/components/app/NavLink";
 
 /** Every page beneath this reads the database for the signed-in user. */
 export const dynamic = "force-dynamic";
+
+const DESTINATIONS = [
+  { href: "/businesses", label: "Businesses" },
+  { href: "/scans", label: "Scans" },
+  { href: "/leads", label: "Leads" },
+  { href: "/proposals", label: "Proposals" },
+  { href: "/follow-ups", label: "Follow-ups" },
+  { href: "/clients", label: "Clients" },
+  { href: "/catalog", label: "Catalogue" },
+  { href: "/widget", label: "Widget" },
+];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   // This guard covers rendering only. It does NOT protect the server actions beneath it,
@@ -21,49 +34,37 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <header className="border-b">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-4 px-6 py-3">
-          <Link href="/businesses" className="font-semibold tracking-tight">
+      <header className="sticky top-0 z-20 border-b border-line bg-surface-2/95 backdrop-blur-[2px]">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 pt-2.5 sm:px-6">
+          <Link
+            href="/businesses"
+            className="flex items-center gap-2 text-md font-semibold tracking-tight"
+          >
+            <Mark className="h-4 w-4" />
             {APP_NAME}
           </Link>
-          <nav className="flex gap-4 text-sm">
-            <Link href="/businesses" className="hover:underline">
-              Businesses
-            </Link>
-            <Link href="/scans" className="hover:underline">
-              Scans
-            </Link>
-            <Link href="/leads" className="hover:underline">
-              Leads
-            </Link>
-            <Link href="/proposals" className="hover:underline">
-              Proposals
-            </Link>
-            <Link href="/follow-ups" className="hover:underline">
-              Follow-ups
-            </Link>
-            <Link href="/clients" className="hover:underline">
-              Clients
-            </Link>
-            <Link href="/catalog" className="hover:underline">
-              Catalogue
-            </Link>
-            <Link href="/widget" className="hover:underline">
-              Widget
-            </Link>
-          </nav>
-          <div className="ml-auto flex items-center gap-3 text-sm">
-            <span className="text-neutral-600">{workspaceName}</span>
-            <form action={signOut}>
-              <button type="submit" className="rounded border px-2 py-1 hover:bg-neutral-50">
-                Sign out
-              </button>
-            </form>
-          </div>
+          <span className="ml-auto min-w-0 truncate text-xs text-ink-muted" title={workspaceName}>
+            {workspaceName}
+          </span>
+          <form action={signOut}>
+            <button type="submit" className="btn btn-ghost btn-sm">
+              Sign out
+            </button>
+          </form>
         </div>
+
+        <nav aria-label="Workspace" className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+          <div className="nav-strip">
+            {DESTINATIONS.map((destination) => (
+              <NavLink key={destination.href} href={destination.href}>
+                {destination.label}
+              </NavLink>
+            ))}
+          </div>
+        </nav>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</main>
     </div>
   );
 }

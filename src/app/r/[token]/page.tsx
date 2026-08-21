@@ -49,23 +49,27 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
   }));
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-10">
+    <main className="mx-auto flex w-full max-w-3xl flex-col gap-7 px-5 py-10 sm:px-6 sm:py-12">
       <header>
-        <p className="text-sm text-neutral-600">{agency ? `Prepared by ${agency.name}` : "Local search report"}</p>
-        <h1 className="mt-1 text-2xl font-semibold">How {scan.businessName} shows up in local search</h1>
-        <p className="mt-1 text-sm text-neutral-600">
-          Measured {scan.createdAt.toISOString().slice(0, 10)}
+        <p className="text-xs text-ink-muted">
+          {agency ? `Prepared by ${agency.name}` : "Local search report"}
+        </p>
+        <h1 className="mt-1.5 text-2xl font-semibold">
+          How {scan.businessName} shows up in local search
+        </h1>
+        <p className="mt-1.5 text-xs text-ink-muted">
+          Measured <span className="data">{scan.createdAt.toISOString().slice(0, 10)}</span>
         </p>
       </header>
 
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="panel panel-pad flex flex-wrap items-center gap-x-6 gap-y-4">
         <ScoreBadge score={scan.score} size="large" />
         <ScanProgress done={scan.status === "complete" || scan.status === "failed"} />
       </div>
 
       <ScanReport outcomes={outcomes} gridPoints={gridPoints} aiProbes={aiProbes} />
 
-      <footer className="border-t border-neutral-200 pt-4 text-sm text-neutral-600">
+      <footer className="border-t border-line pt-4 text-xs text-ink-muted">
         Every number here comes from a live check run on the date above. Ask
         {agency ? ` ${agency.name}` : " your agency"} for the raw results behind any of them.
       </footer>

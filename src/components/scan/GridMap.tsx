@@ -3,10 +3,10 @@ import { RANK_HORIZON } from "@/lib/scans/geogrid";
 export type GridCell = { latitude: number; longitude: number; rank: number | null };
 
 function tone(rank: number | null): string {
-  if (rank === null || rank > RANK_HORIZON) return "bg-red-100 text-red-900 border-red-200";
-  if (rank <= 3) return "bg-green-100 text-green-900 border-green-200";
-  if (rank <= 10) return "bg-amber-100 text-amber-900 border-amber-200";
-  return "bg-orange-100 text-orange-900 border-orange-200";
+  if (rank === null || rank > RANK_HORIZON) return "bg-band-critical-soft text-band-critical border-band-critical-line";
+  if (rank <= 3) return "bg-band-strong-soft text-band-strong border-band-strong-line";
+  if (rank <= 10) return "bg-band-fair-soft text-band-fair border-band-fair-line";
+  return "bg-band-weak-soft text-band-weak border-band-weak-line";
 }
 
 /**
@@ -40,7 +40,7 @@ export function GridMap({ points, keyword }: { points: readonly GridCell[]; keyw
           </div>
         ))}
       </div>
-      <figcaption className="text-xs text-neutral-600">
+      <figcaption className="text-xs text-ink-muted">
         Position in the map pack when searching from each point. A dash means the business does
         not appear at all.
       </figcaption>

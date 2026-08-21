@@ -32,14 +32,14 @@ async function ProposalTable({ params }: { params: SearchParams }) {
       window={window}
       href={(page) => href({ page })}
       action={
-        <Link href="/proposals/new" className="rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white">
+        <Link href="/proposals/new" className="btn btn-primary">
           New proposal
         </Link>
       }
       filters={<UrlSearchInput label="Search" placeholder="Title or prospect" />}
     >
-      <table className="w-full text-sm">
-        <thead className="border-b bg-neutral-50">
+      <table className="list-table">
+        <thead>
           <tr>
             <SortableHeader<ProposalSort>
               column="title"
@@ -48,7 +48,7 @@ async function ProposalTable({ params }: { params: SearchParams }) {
               activeDirection={query.direction}
               href={sortHref}
             />
-            <th scope="col" className="px-3 py-2 text-left font-medium">
+            <th scope="col">
               Status
             </th>
             <SortableHeader<ProposalSort>
@@ -71,13 +71,13 @@ async function ProposalTable({ params }: { params: SearchParams }) {
         </thead>
         <tbody>
           {rows.map((proposal) => (
-            <tr key={proposal.id} className="border-b last:border-0 hover:bg-neutral-50">
+            <tr key={proposal.id}>
               <td className="px-3 py-2">
                 <Link href={`/proposals/${proposal.id}`} className="font-medium hover:underline">
                   {proposal.title}
                 </Link>
                 {proposal.businessName ? (
-                  <span className="block text-xs text-neutral-600">{proposal.businessName}</span>
+                  <span className="block text-xs text-ink-muted">{proposal.businessName}</span>
                 ) : null}
               </td>
               <td className="px-3 py-2">
@@ -87,10 +87,10 @@ async function ProposalTable({ params }: { params: SearchParams }) {
                 {proposal.totals ? (
                   formatMoney(proposal.totals.contractValue)
                 ) : (
-                  <span className="text-neutral-400">Not sent</span>
+                  <span className="text-ink-faint">Not sent</span>
                 )}
               </td>
-              <td className="px-3 py-2 text-right tabular-nums text-neutral-600">
+              <td className="px-3 py-2 text-right tabular-nums text-ink-muted">
                 {proposal.createdAt.toISOString().slice(0, 10)}
               </td>
             </tr>
@@ -106,7 +106,7 @@ export default async function ProposalsPage({ searchParams }: { searchParams: Pr
   return (
     <GuardedSuspense
       label="Proposals"
-      fallback={<div className="h-64 animate-pulse rounded-md bg-neutral-100" aria-hidden="true" />}
+      fallback={<div className="skeleton h-64" aria-hidden="true" />}
     >
       <ProposalTable params={params} />
     </GuardedSuspense>

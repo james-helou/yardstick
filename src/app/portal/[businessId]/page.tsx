@@ -35,27 +35,27 @@ async function Results({
 
   return (
     <>
-      <div className="flex items-center gap-4 rounded-md border p-4">
+      <div className="flex items-center gap-4 panel panel-pad">
         <ScoreBadge score={latest ? Math.round(latest.score) : null} />
         <div>
           <p className="text-sm font-medium">
             {latest ? "Where you stand today" : "Not measured yet"}
           </p>
-          <p className="text-sm text-neutral-600">{trend.headline}</p>
+          <p className="text-sm text-ink-muted">{trend.headline}</p>
         </div>
       </div>
 
       <TrendPanel trend={trend} title={since ? "Since you signed" : "Since we started"} />
 
       {Object.keys(current).length > 0 ? (
-        <section className="rounded-md border p-4">
-          <h2 className="text-sm font-semibold">What makes up the score</h2>
+        <section className="panel panel-pad">
+          <h2 className="section-title">What makes up the score</h2>
           <dl className="mt-3 flex flex-col gap-3">
             {(Object.keys(current) as (keyof typeof PILLAR_LABEL)[]).map((pillar) => (
               <div key={pillar} className="flex items-start justify-between gap-4">
                 <div>
                   <dt className="text-sm font-medium">{PILLAR_LABEL[pillar]}</dt>
-                  <dd className="text-xs text-neutral-600">{PILLAR_BLURB[pillar]}</dd>
+                  <dd className="text-xs text-ink-muted">{PILLAR_BLURB[pillar]}</dd>
                 </div>
                 <span className="text-sm font-medium tabular-nums">{Math.round(current[pillar]!)}</span>
               </div>
@@ -96,7 +96,7 @@ export default async function PortalBusinessPage({ params }: { params: Promise<{
     <section className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-semibold">{business.name}</h1>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-ink-muted">
           {since
             ? `Measured since you signed, on ${since.toISOString().slice(0, 10)}.`
             : "Measured since we started tracking."}
@@ -108,12 +108,12 @@ export default async function PortalBusinessPage({ params }: { params: Promise<{
 
       <GuardedSuspense
         label="Your results"
-        fallback={<div className="h-64 animate-pulse rounded-md bg-neutral-100" aria-hidden="true" />}
+        fallback={<div className="skeleton h-64" aria-hidden="true" />}
       >
         <Results scope={scope} businessId={businessId} since={since} />
       </GuardedSuspense>
 
-      <p className="text-xs text-neutral-500">
+      <p className="text-xs text-ink-faint">
         Shared with {grant.email}. Ask your agency to change what you see here.
       </p>
     </section>

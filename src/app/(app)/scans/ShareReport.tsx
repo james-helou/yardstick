@@ -25,9 +25,9 @@ export function ShareReport({
 
   if (!url) {
     return (
-      <div className="rounded-lg border border-neutral-200 p-4">
-        <h2 className="text-sm font-medium">Share this report</h2>
-        <p className="mt-0.5 text-sm text-neutral-600">
+      <div className="panel panel-pad">
+        <h2 className="section-title">Share this report</h2>
+        <p className="mt-0.5 text-sm text-ink-muted">
           Creates a link anyone can open, with no login. You can revoke it at any time.
         </p>
         <form action={share} className="mt-3">
@@ -40,19 +40,19 @@ export function ShareReport({
   }
 
   return (
-    <div className="rounded-lg border border-neutral-200 p-4">
-      <h2 className="text-sm font-medium">Shared report</h2>
-      <p className="mt-0.5 text-sm text-neutral-600">
+    <div className="panel panel-pad">
+      <h2 className="section-title">Shared report</h2>
+      <p className="mt-0.5 text-sm text-ink-muted">
         {views === 0 ? "Not opened yet" : `Opened ${views} time${views === 1 ? "" : "s"}`}
       </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <code className="rounded border border-neutral-200 bg-neutral-50 px-2 py-1 text-sm break-all">
+        <code className="rounded-sm border border-line bg-surface-2 px-2 py-1 break-all">
           {url}
         </code>
         <button
           type="button"
-          className="rounded border border-neutral-300 px-3 py-1 text-sm hover:bg-neutral-50"
+          className="btn btn-secondary btn-sm"
           onClick={async () => {
             await navigator.clipboard.writeText(url);
             setCopied(true);
@@ -62,7 +62,7 @@ export function ShareReport({
         </button>
         <form action={revoke}>
           <input type="hidden" name="scanId" value={scanId} />
-          <SubmitButton label="Revoke" pendingLabel="Revoking" />
+          <SubmitButton label="Revoke" pendingLabel="Revoking" variant="danger" />
         </form>
       </div>
       <FormError message={revokeState.errors.form} />

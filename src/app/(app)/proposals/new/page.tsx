@@ -17,11 +17,11 @@ export default async function NewProposalPage() {
   return (
     <section className="flex flex-col gap-6">
       <div>
-        <Link href="/proposals" className="text-sm text-neutral-600 hover:underline">
+        <Link href="/proposals" className="back-link">
           Back to proposals
         </Link>
         <h1 className="mt-1 text-xl font-semibold">New proposal</h1>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-ink-muted">
           Set the terms first, then add what you are selling. Nothing is fixed until you send it.
         </p>
       </div>

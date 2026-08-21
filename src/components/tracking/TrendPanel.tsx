@@ -11,18 +11,18 @@ const HEIGHT = 64;
 
 const ARROW: Record<Trend["direction"], string> = { up: "▲", down: "▼", flat: "→" };
 const TONE: Record<Trend["direction"], string> = {
-  up: "text-emerald-700",
-  down: "text-red-700",
-  flat: "text-neutral-600",
+  up: "text-band-strong",
+  down: "text-band-critical",
+  flat: "text-ink-muted",
 };
 
 export function TrendPanel({ trend, title = "Since we started" }: { trend: Trend; title?: string }) {
   const line = sparkline(trend.points, WIDTH, HEIGHT);
 
   return (
-    <section className="rounded-md border p-4">
+    <section className="panel panel-pad">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-semibold">{title}</h2>
+        <h2 className="section-title">{title}</h2>
         {trend.latest ? (
           <p className={`text-sm font-medium ${TONE[trend.direction]}`}>
             {ARROW[trend.direction]} {trend.change > 0 ? `+${trend.change}` : trend.change} points
@@ -30,7 +30,7 @@ export function TrendPanel({ trend, title = "Since we started" }: { trend: Trend
         ) : null}
       </div>
 
-      <p className="mt-1 text-sm text-neutral-700">{trend.headline}</p>
+      <p className="mt-1 text-sm text-ink">{trend.headline}</p>
 
       {trend.points.length > 1 ? (
         <svg
@@ -57,13 +57,13 @@ export function TrendPanel({ trend, title = "Since we started" }: { trend: Trend
         <dl className="mt-3 flex flex-col gap-1 text-sm">
           {trend.movers.map((mover) => (
             <div key={mover.pillar} className="flex items-baseline justify-between gap-3">
-              <dt className="text-neutral-700">{mover.label}</dt>
+              <dt className="text-ink">{mover.label}</dt>
               <dd className="tabular-nums">
-                <span className="text-neutral-500">
+                <span className="text-ink-faint">
                   {Math.round(mover.from)} → {Math.round(mover.to)}
                 </span>{" "}
                 <span
-                  className={mover.change > 0 ? "text-emerald-700" : mover.change < 0 ? "text-red-700" : ""}
+                  className={mover.change > 0 ? "text-band-strong" : mover.change < 0 ? "text-band-critical" : ""}
                 >
                   {mover.change > 0 ? `+${mover.change}` : mover.change}
                 </span>
@@ -74,7 +74,7 @@ export function TrendPanel({ trend, title = "Since we started" }: { trend: Trend
       ) : null}
 
       {trend.points.length > 1 ? (
-        <p className="mt-3 text-xs text-neutral-500">
+        <p className="mt-3 text-xs text-ink-faint">
           {trend.points.length} measurements, {trend.first!.at.toISOString().slice(0, 10)} to{" "}
           {trend.latest!.at.toISOString().slice(0, 10)}.
         </p>

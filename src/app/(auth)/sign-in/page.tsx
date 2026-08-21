@@ -26,7 +26,7 @@ export default function SignInPage() {
 
       <SubmitButton label="Sign in" pendingLabel="Signing in…" />
 
-      <p className="text-sm text-neutral-600">
+      <p className="text-sm text-ink-muted">
         No account yet?{" "}
         <Link href="/sign-up" className="underline underline-offset-4">
           Create one

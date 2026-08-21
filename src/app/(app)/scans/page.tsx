@@ -52,10 +52,10 @@ async function ScanTable({ params }: { params: SearchParams }) {
         { label: "Scan credits", value: String(credits) },
       ]}
     >
-      <table className="w-full text-sm">
-        <thead className="border-b bg-neutral-50">
+      <table className="list-table">
+        <thead>
           <tr>
-            <th scope="col" className="px-3 py-2 text-left font-medium">
+            <th scope="col">
               Business
             </th>
             <SortableHeader<ScanSort>
@@ -85,17 +85,17 @@ async function ScanTable({ params }: { params: SearchParams }) {
         </thead>
         <tbody>
           {rows.map((scan) => (
-            <tr key={scan.id} className="border-b last:border-0 hover:bg-neutral-50">
+            <tr key={scan.id}>
               <td className="px-3 py-2">
                 <Link href={`/scans/${scan.id}`} className="font-medium hover:underline">
                   {scan.businessName}
                 </Link>
               </td>
-              <td className="px-3 py-2 text-neutral-700">{SCAN_STATUS_LABEL[scan.status]}</td>
+              <td className="px-3 py-2 text-ink">{SCAN_STATUS_LABEL[scan.status]}</td>
               <td className="px-3 py-2 text-right">
                 <ScoreBadge score={scan.score} />
               </td>
-              <td className="px-3 py-2 text-right tabular-nums text-neutral-600">
+              <td className="px-3 py-2 text-right tabular-nums text-ink-muted">
                 {scan.createdAt.toISOString().slice(0, 10)}
               </td>
             </tr>
@@ -107,7 +107,7 @@ async function ScanTable({ params }: { params: SearchParams }) {
 }
 
 function TableSkeleton() {
-  return <div className="h-64 animate-pulse rounded-md bg-neutral-100" aria-hidden="true" />;
+  return <div className="skeleton h-64" aria-hidden="true" />;
 }
 
 export default async function ScansPage({ searchParams }: { searchParams: Promise<SearchParams> }) {

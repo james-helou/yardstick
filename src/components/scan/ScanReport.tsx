@@ -25,12 +25,20 @@ export function ScanReport({ outcomes, gridPoints, aiProbes }: ScanReportProps) 
     <>
       {opportunities.length > 0 ? (
         <div>
-          <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-neutral-500">Fix these first</h2>
-          <ol className="flex flex-col gap-2 text-sm">
-            {opportunities.map((finding) => (
-              <li key={finding.code} className="rounded border border-neutral-200 px-3 py-2">
-                <span className="font-medium">{finding.label}</span>
-                {finding.detail ? <span className="text-neutral-600"> · {finding.detail}</span> : null}
+          <h2 className="section-title mb-3">Fix these first</h2>
+          {/* Numbered because the order is the finding: heaviest failure first. */}
+          <ol className="panel flex flex-col divide-y divide-line">
+            {opportunities.map((finding, index) => (
+              <li key={finding.code} className="flex gap-3 px-3 py-2.5 sm:px-4">
+                <span aria-hidden="true" className="data pt-px text-xs text-brass-ink">
+                  {index + 1}
+                </span>
+                <span className="min-w-0">
+                  <span className="font-medium">{finding.label}</span>
+                  {finding.detail ? (
+                    <span className="text-ink-muted"> · {finding.detail}</span>
+                  ) : null}
+                </span>
               </li>
             ))}
           </ol>

@@ -20,54 +20,54 @@ async function Catalog() {
     <section className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-semibold">Catalogue</h1>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-ink-muted">
           What you sell, at your prices. A proposal copies the price the moment a line is added, so
           changing something here never rewrites a quote you have already sent.
         </p>
       </div>
 
       {items.length === 0 ? (
-        <p className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-neutral-600">
+        <p className="rounded-md border border-dashed border-line-strong px-3 py-6 text-center text-ink-muted">
           Nothing in the catalogue yet. Add the thing you sell most often first.
         </p>
       ) : (
-        <table className="w-full text-sm">
-          <thead className="border-b bg-neutral-50">
+        <table className="list-table">
+          <thead>
             <tr>
-              <th scope="col" className="px-3 py-2 text-left font-medium">
+              <th scope="col">
                 Item
               </th>
-              <th scope="col" className="px-3 py-2 text-left font-medium">
+              <th scope="col">
                 Billing
               </th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">
+              <th scope="col" className="text-right">
                 Price
               </th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">
+              <th scope="col" className="text-right">
                 <span className="sr-only">Actions</span>
               </th>
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={item.id} className="border-b last:border-0">
+              <tr key={item.id}>
                 <td className="px-3 py-2">
                   <span className="font-medium">{item.name}</span>
                   {item.description ? (
-                    <span className="block text-xs text-neutral-600">{item.description}</span>
+                    <span className="block text-xs text-ink-muted">{item.description}</span>
                   ) : null}
                 </td>
-                <td className="px-3 py-2 text-neutral-600">
+                <td className="px-3 py-2 text-ink-muted">
                   {item.billing === "monthly" ? "Every month" : "One time"}
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums">
                   {formatMoney(item.unitPrice)}
-                  <span className="block text-xs text-neutral-500">{amountToInput(item.unitPrice)}</span>
+                  <span className="block text-xs text-ink-faint">{amountToInput(item.unitPrice)}</span>
                 </td>
                 <td className="px-3 py-2 text-right">
                   <form action={archiveServiceItemAction}>
                     <input type="hidden" name="id" value={item.id} />
-                    <button type="submit" className="rounded border px-2 py-1 text-xs hover:bg-neutral-50">
+                    <button type="submit" className="btn btn-secondary btn-sm">
                       Archive
                     </button>
                   </form>
@@ -87,7 +87,7 @@ export default function CatalogPage() {
   return (
     <GuardedSuspense
       label="Catalogue"
-      fallback={<div className="h-64 animate-pulse rounded-md bg-neutral-100" aria-hidden="true" />}
+      fallback={<div className="skeleton h-64" aria-hidden="true" />}
     >
       <Catalog />
     </GuardedSuspense>

@@ -44,14 +44,14 @@ export function SearchInput({
   }, [value, delayMs, onSearch]);
 
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="font-medium">{label}</span>
+    <label className="flex w-full flex-col gap-1.5 sm:w-72">
+      <span className="text-xs font-medium text-ink-muted">{label}</span>
       <input
         type="search"
         value={value}
         placeholder={placeholder}
         onChange={(event) => setValue(event.target.value)}
-        className="rounded border px-3 py-1.5"
+        className="control"
       />
     </label>
   );

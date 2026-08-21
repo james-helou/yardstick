@@ -22,17 +22,17 @@ export function PillarCard({ pillar, status, score, findings, detail }: PillarCa
   const note = STATUS_NOTE[status];
 
   return (
-    <article className="rounded-lg border border-neutral-200 p-4">
+    <article className="panel panel-pad">
       <header className="flex items-start justify-between gap-4">
         <div>
           <h3 className="font-medium">{PILLAR_LABEL[pillar]}</h3>
-          <p className="mt-0.5 text-sm text-neutral-600">{PILLAR_BLURB[pillar]}</p>
+          <p className="mt-0.5 text-sm text-ink-muted">{PILLAR_BLURB[pillar]}</p>
         </div>
         {status === "ok" ? <ScoreBadge score={score} /> : null}
       </header>
 
       {note ? (
-        <p className="mt-3 rounded border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
+        <p className="mt-3 rounded-sm border border-line bg-surface-2 px-3 py-2 text-ink">
           {note}
           {detail ? `: ${detail}` : ""}
         </p>
@@ -42,13 +42,13 @@ export function PillarCard({ pillar, status, score, findings, detail }: PillarCa
         <ul className="mt-3 flex flex-col gap-1.5 text-sm">
           {findings.map((finding) => (
             <li key={finding.code} className="flex gap-2">
-              <span aria-hidden="true" className={finding.ok ? "text-green-700" : "text-red-700"}>
+              <span aria-hidden="true" className={finding.ok ? "text-band-strong" : "text-band-critical"}>
                 {finding.ok ? "✓" : "✕"}
               </span>
               <span className="sr-only">{finding.ok ? "Passed" : "Needs work"}:</span>
               <span>
-                <span className={finding.ok ? "text-neutral-700" : "font-medium"}>{finding.label}</span>
-                {finding.detail ? <span className="text-neutral-600"> · {finding.detail}</span> : null}
+                <span className={finding.ok ? "text-ink" : "font-medium"}>{finding.label}</span>
+                {finding.detail ? <span className="text-ink-muted"> · {finding.detail}</span> : null}
               </span>
             </li>
           ))}

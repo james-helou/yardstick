@@ -22,8 +22,8 @@ function Answer({ value, label, primary }: { value: "accepted" | "declined"; lab
       disabled={pending}
       className={
         primary
-          ? "rounded bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-60"
-          : "rounded border px-4 py-2 text-sm hover:bg-neutral-50 disabled:opacity-60"
+          ? "btn btn-primary"
+          : "rounded border px-4 py-2 text-sm hover:bg-surface-2 disabled:opacity-60"
       }
     >
       {pending ? "Sending…" : label}
@@ -36,8 +36,8 @@ export function SignForm({ action, token }: { action: Action; token: string }) {
   const [state, formAction] = useActionState(action, EMPTY_FORM_STATE);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4 rounded-md border p-4">
-      <h2 className="text-sm font-semibold">Your answer</h2>
+    <form action={formAction} className="panel panel-pad flex flex-col gap-4">
+      <h2 className="section-title">Your answer</h2>
       <FormError message={state.errors.form} />
 
       <input type="hidden" name="token" value={token} />

@@ -18,8 +18,8 @@ export type TotalsView = {
 function Row({ label, value, strong }: { label: string; value: Money; strong?: boolean }) {
   return (
     <div className={`flex items-baseline justify-between gap-4 ${strong ? "font-semibold" : ""}`}>
-      <span className={strong ? "" : "text-neutral-600"}>{label}</span>
-      <span className="tabular-nums">{formatMoney(value)}</span>
+      <span className={strong ? "" : "text-ink-muted"}>{label}</span>
+      <span className="data">{formatMoney(value)}</span>
     </div>
   );
 }
@@ -35,10 +35,10 @@ export function QuoteTotals({ totals }: { totals: TotalsView }) {
       : `${totals.termMonths} months${totals.freeMonths > 0 ? `, ${totals.freeMonths} free` : ""}`;
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border p-4 text-sm">
+    <div className="panel panel-pad flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-4">
-        <span className="font-semibold">Totals</span>
-        <span className="text-xs text-neutral-600">{term}</span>
+        <h2 className="section-title">Totals</h2>
+        <span className="text-xs text-ink-muted">{term}</span>
       </div>
 
       {totals.oneTimeSubtotal ? <Row label="One time, before discount" value={totals.oneTimeSubtotal} /> : null}

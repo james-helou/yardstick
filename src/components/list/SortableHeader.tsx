@@ -30,11 +30,11 @@ export function SortableHeader<Column extends string>({
     <th
       scope="col"
       aria-sort={isActive ? (activeDirection === "asc" ? "ascending" : "descending") : "none"}
-      className={`px-3 py-2 font-medium ${align === "right" ? "text-right" : "text-left"}`}
+      className={align === "right" ? "text-right" : "text-left"}
     >
-      <Link href={href(column, nextDirection)} className="inline-flex items-center gap-1 hover:underline">
+      <Link href={href(column, nextDirection)} className="inline-flex items-center gap-1 hover:text-ink">
         {label}
-        <span aria-hidden="true" className="text-neutral-400">
+        <span aria-hidden="true" className="text-ink-faint">
           {isActive ? (activeDirection === "asc" ? "↑" : "↓") : "↕"}
         </span>
       </Link>

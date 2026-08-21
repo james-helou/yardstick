@@ -24,9 +24,9 @@ export function ClientAccess({
   error?: string;
 }) {
   return (
-    <section className="rounded-md border p-4">
-      <h2 className="text-sm font-semibold">Client access</h2>
-      <p className="mt-0.5 text-sm text-neutral-600">
+    <section className="panel panel-pad">
+      <h2 className="section-title">Client access</h2>
+      <p className="mt-0.5 text-sm text-ink-muted">
         Shows them their own results and nothing else. No prices, no other clients.
       </p>
 
@@ -40,12 +40,12 @@ export function ClientAccess({
       <FormError message={error} />
 
       {grants.length === 0 ? null : (
-        <ul className="mt-4 flex flex-col divide-y rounded border">
+        <ul className="panel mt-4 flex flex-col divide-y divide-line">
           {grants.map((grant) => (
             <li key={grant.id} className="flex flex-wrap items-center gap-2 px-3 py-2">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{grant.email}</p>
-                <p className="text-xs text-neutral-600">
+                <p className="text-xs text-ink-muted">
                   {grant.revokedAt
                     ? "Revoked"
                     : grant.acceptedAt
@@ -53,7 +53,7 @@ export function ClientAccess({
                       : "Invited, not opened yet"}
                 </p>
                 {grant.revokedAt || grant.acceptedAt ? null : (
-                  <code className="mt-1 block truncate rounded border bg-neutral-50 px-2 py-1 text-xs">
+                  <code className="mt-1 block truncate rounded border bg-surface-2 px-2 py-1 text-xs">
                     {linkFor(grant.token)}
                   </code>
                 )}
@@ -62,7 +62,7 @@ export function ClientAccess({
                 <form action={revoke}>
                   <input type="hidden" name="grantId" value={grant.id} />
                   <input type="hidden" name="businessId" value={businessId} />
-                  <button type="submit" className="rounded border px-2 py-1 text-xs hover:bg-neutral-50">
+                  <button type="submit" className="btn btn-secondary btn-sm">
                     Revoke
                   </button>
                 </form>

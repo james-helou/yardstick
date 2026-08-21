@@ -15,7 +15,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
           <span className="font-semibold tracking-tight">Your results</span>
           <div className="ml-auto text-sm">
             <form action={signOutOfPortal}>
-              <button type="submit" className="rounded border px-2 py-1 hover:bg-neutral-50">
+              <button type="submit" className="btn btn-secondary btn-sm">
                 Sign out
               </button>
             </form>

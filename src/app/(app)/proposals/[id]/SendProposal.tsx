@@ -20,10 +20,10 @@ export function SendProposal({ action, id, ready }: { action: Action; id: string
       {ready ? (
         <SubmitButton label="Send it" pendingLabel="Sending…" />
       ) : (
-        <p className="text-sm text-neutral-600">Add a line before sending.</p>
+        <p className="text-sm text-ink-muted">Add a line before sending.</p>
       )}
       {ready ? (
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-ink-faint">
           Sending freezes these totals. Nothing on this page changes afterwards.
         </p>
       ) : null}

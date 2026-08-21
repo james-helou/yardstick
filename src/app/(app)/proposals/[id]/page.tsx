@@ -80,14 +80,14 @@ async function ProposalDetail({ id }: { id: string }) {
   return (
     <section className="flex flex-col gap-6">
       <div>
-        <Link href="/proposals" className="text-sm text-neutral-600 hover:underline">
+        <Link href="/proposals" className="back-link">
           Back to proposals
         </Link>
         <div className="mt-1 flex flex-wrap items-center gap-3">
           <h1 className="text-xl font-semibold">{proposal.title}</h1>
           <StatusChip status={proposal.status} />
         </div>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-ink-muted">
           {proposal.businessName ? (
             <>
               For{" "}
@@ -109,24 +109,24 @@ async function ProposalDetail({ id }: { id: string }) {
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-4">
-          <div className="overflow-x-auto rounded-md border">
-            <table className="w-full text-sm">
-              <thead className="border-b bg-neutral-50">
+          <div className="table-scroll panel">
+            <table className="list-table list-table-fit">
+              <thead>
                 <tr>
-                  <th scope="col" className="px-3 py-2 text-left font-medium">
+                  <th scope="col">
                     Line
                   </th>
-                  <th scope="col" className="px-3 py-2 text-right font-medium">
+                  <th scope="col" className="hidden text-right sm:table-cell">
                     Qty
                   </th>
-                  <th scope="col" className="px-3 py-2 text-right font-medium">
+                  <th scope="col" className="hidden text-right sm:table-cell">
                     Price
                   </th>
-                  <th scope="col" className="px-3 py-2 text-right font-medium">
+                  <th scope="col" className="text-right">
                     Total
                   </th>
                   {editable ? (
-                    <th scope="col" className="px-3 py-2 text-right font-medium">
+                    <th scope="col" className="text-right">
                       <span className="sr-only">Remove</span>
                     </th>
                   ) : null}
@@ -135,30 +135,41 @@ async function ProposalDetail({ id }: { id: string }) {
               <tbody>
                 {live.lines.length === 0 ? (
                   <tr>
-                    <td colSpan={editable ? 5 : 4} className="px-3 py-6 text-center text-neutral-600">
+                    <td colSpan={editable ? 5 : 4} className="px-3 py-6 text-center text-ink-muted">
                       Nothing on this proposal yet.
                     </td>
                   </tr>
                 ) : null}
 
                 {live.lines.map((line) => (
-                  <tr key={line.key} className="border-b last:border-0">
+                  <tr key={line.key}>
                     <td className="px-3 py-2">
                       <span className="font-medium">{line.name}</span>
-                      <span className="block text-xs text-neutral-600">
+                      <span className="block text-xs text-ink-muted">
                         {line.billing === "monthly" ? "Every month" : "One time"}
                         {line.discountPercent ? ` · ${line.discountPercent}% off` : ""}
                       </span>
+                      {/* The two columns the phone drops, said in words under the name. */}
+                      <span className="block text-xs text-ink-muted sm:hidden">
+                        <span className="data">{line.quantity}</span> ×{" "}
+                        <span className="data">{formatMoney(line.unitPrice)}</span>
+                      </span>
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums">{line.quantity}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatMoney(line.unitPrice)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatMoney(line.net)}</td>
+                    <td className="hidden text-right sm:table-cell">
+                      <span className="data">{line.quantity}</span>
+                    </td>
+                    <td className="hidden text-right sm:table-cell">
+                      <span className="data">{formatMoney(line.unitPrice)}</span>
+                    </td>
+                    <td className="text-right">
+                      <span className="data">{formatMoney(line.net)}</span>
+                    </td>
                     {editable ? (
                       <td className="px-3 py-2 text-right">
                         <form action={removeLineAction}>
                           <input type="hidden" name="proposalId" value={proposal.id} />
                           <input type="hidden" name="lineId" value={line.key} />
-                          <button type="submit" className="rounded border px-2 py-1 text-xs hover:bg-neutral-50">
+                          <button type="submit" className="btn btn-secondary btn-sm">
                             Remove
                           </button>
                         </form>
@@ -171,7 +182,7 @@ async function ProposalDetail({ id }: { id: string }) {
           </div>
 
           {editable && catalog.length > 0 ? (
-            <form action={addCatalogLineAction} className="flex flex-wrap items-end gap-3 rounded-md border p-4">
+            <form action={addCatalogLineAction} className="flex flex-wrap items-end gap-3 panel panel-pad">
               <input type="hidden" name="proposalId" value={proposal.id} />
               <div className="flex flex-col gap-1">
                 <label htmlFor="serviceItemId" className="text-sm font-medium">
@@ -180,7 +191,7 @@ async function ProposalDetail({ id }: { id: string }) {
                 <select
                   id="serviceItemId"
                   name="serviceItemId"
-                  className="rounded border px-3 py-2 text-sm focus:outline-2 focus:outline-offset-2"
+                  className="control"
                 >
                   {catalog.map((item) => (
                     <option key={item.id} value={item.id}>
@@ -190,10 +201,10 @@ async function ProposalDetail({ id }: { id: string }) {
                   ))}
                 </select>
               </div>
-              <button type="submit" className="rounded border px-3 py-2 text-sm hover:bg-neutral-50">
+              <button type="submit" className="btn btn-secondary">
                 Add
               </button>
-              <p className="w-full text-xs text-neutral-500">
+              <p className="w-full text-xs text-ink-faint">
                 The price is copied onto the line. Changing the catalogue later leaves this quote alone.
               </p>
             </form>
@@ -208,7 +219,7 @@ async function ProposalDetail({ id }: { id: string }) {
           {editable ? (
             <SendProposal action={sendProposalAction} id={proposal.id} ready={lines.length > 0} />
           ) : (
-            <p className="rounded-md border px-3 py-2 text-sm text-neutral-600">
+            <p className="panel px-3 py-2 text-ink-muted">
               These totals were written when it was sent. They do not move again.
             </p>
           )}
@@ -224,13 +235,13 @@ async function ProposalDetail({ id }: { id: string }) {
           )}
 
           {signature ? (
-            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm">
-              <h2 className="font-semibold text-emerald-900">Signed</h2>
-              <p className="mt-1 text-emerald-900">
+            <div className="rounded-md border border-band-strong-line bg-band-strong-soft p-4">
+              <h2 className="font-semibold text-band-strong">Signed</h2>
+              <p className="mt-1 text-band-strong">
                 {signature.signerName} ({signature.signerEmail}) on{" "}
                 {signature.signedAt.toISOString().slice(0, 10)}.
               </p>
-              <p className="mt-2 text-xs text-emerald-800">
+              <p className="mt-2 text-xs text-band-strong">
                 Terms {shortFingerprint(signature.termsFingerprint)}, checked against what was sent.
                 {signature.termsFingerprint === proposal.termsFingerprint
                   ? " Still a match."
@@ -240,9 +251,9 @@ async function ProposalDetail({ id }: { id: string }) {
           ) : null}
 
           {proposal.notes ? (
-            <div className="rounded-md border p-4 text-sm">
-              <h2 className="font-semibold">Notes</h2>
-              <p className="mt-1 whitespace-pre-line text-neutral-700">{proposal.notes}</p>
+            <div className="panel panel-pad">
+              <h2 className="section-title">Notes</h2>
+              <p className="mt-1 whitespace-pre-line text-ink">{proposal.notes}</p>
             </div>
           ) : null}
         </div>
@@ -250,7 +261,7 @@ async function ProposalDetail({ id }: { id: string }) {
 
       {editable ? (
         <div className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold">Terms</h2>
+          <h2 className="section-title">Terms</h2>
           <ProposalForm
             action={updateProposalAction}
             submitLabel="Save terms"
@@ -278,7 +289,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ id: s
   return (
     <GuardedSuspense
       label="Proposal"
-      fallback={<div className="h-64 animate-pulse rounded-md bg-neutral-100" aria-hidden="true" />}
+      fallback={<div className="skeleton h-64" aria-hidden="true" />}
     >
       <ProposalDetail id={id} />
     </GuardedSuspense>

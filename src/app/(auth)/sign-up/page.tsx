@@ -35,7 +35,7 @@ export default function SignUpPage() {
 
       <SubmitButton label="Create workspace" pendingLabel="Creating…" />
 
-      <p className="text-sm text-neutral-600">
+      <p className="text-sm text-ink-muted">
         Already have an account?{" "}
         <Link href="/sign-in" className="underline underline-offset-4">
           Sign in

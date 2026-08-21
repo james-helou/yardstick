@@ -25,7 +25,7 @@ export default async function PortalHome() {
       <h1 className="text-xl font-semibold">Your results</h1>
 
       {portal.grants.length === 0 ? (
-        <p className="rounded-md border p-6 text-sm text-neutral-600">
+        <p className="panel p-6 text-ink-muted">
           Nothing has been shared with you yet. The invitation you were sent opens this page.
         </p>
       ) : (

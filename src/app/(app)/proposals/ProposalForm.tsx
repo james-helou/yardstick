@@ -29,7 +29,7 @@ export function ProposalForm({ action, submitLabel, businesses, proposal }: Prop
   const [state, formAction] = useActionState(action, EMPTY_FORM_STATE);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4 rounded-md border p-4">
+    <form action={formAction} className="panel panel-pad flex flex-col gap-4">
       <FormError message={state.errors.form} />
       {proposal ? <input type="hidden" name="id" value={proposal.id} /> : null}
 
@@ -48,7 +48,7 @@ export function ProposalForm({ action, submitLabel, businesses, proposal }: Prop
             id="businessId"
             name="businessId"
             defaultValue={proposal?.businessId ?? ""}
-            className="rounded border px-3 py-2 text-sm focus:outline-2 focus:outline-offset-2"
+            className="control"
           >
             <option value="">Not linked yet</option>
             {businesses.map((business) => (
@@ -66,7 +66,7 @@ export function ProposalForm({ action, submitLabel, businesses, proposal }: Prop
             defaultValue={proposal?.currency ?? "CAD"}
             // The currency of a proposal is fixed once it exists: every line is priced in it.
             disabled={Boolean(proposal)}
-            className="rounded border px-3 py-2 text-sm focus:outline-2 focus:outline-offset-2 disabled:bg-neutral-100"
+            className="control"
           >
             <option value="CAD">CAD</option>
             <option value="EUR">EUR</option>
@@ -108,7 +108,7 @@ export function ProposalForm({ action, submitLabel, businesses, proposal }: Prop
           name="notes"
           rows={3}
           defaultValue={proposal?.notes ?? ""}
-          className="rounded border px-3 py-2 text-sm focus:outline-2 focus:outline-offset-2"
+          className="control"
         />
       </Field>
 

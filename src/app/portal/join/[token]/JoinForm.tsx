@@ -24,8 +24,8 @@ function Choice({ value, label, primary }: { value: "new" | "existing"; label: s
       disabled={pending}
       className={
         primary
-          ? "rounded bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-60"
-          : "rounded border px-4 py-2 text-sm hover:bg-neutral-50 disabled:opacity-60"
+          ? "btn btn-primary"
+          : "rounded border px-4 py-2 text-sm hover:bg-surface-2 disabled:opacity-60"
       }
     >
       {pending ? "Opening…" : label}
@@ -37,13 +37,13 @@ export function JoinForm({ action, token, email }: { action: Action; token: stri
   const [state, formAction] = useActionState(action, EMPTY_FORM_STATE);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4 rounded-md border p-4">
+    <form action={formAction} className="panel panel-pad flex flex-col gap-4">
       <FormError message={state.errors.form} />
       <input type="hidden" name="token" value={token} />
 
       <div className="flex flex-col gap-1">
         <span className="text-sm font-medium">Email</span>
-        <span className="rounded border bg-neutral-50 px-3 py-2 text-sm text-neutral-700">{email}</span>
+        <span className="rounded-sm border border-line bg-surface-2 px-3 py-2 text-ink">{email}</span>
       </div>
 
       <Field

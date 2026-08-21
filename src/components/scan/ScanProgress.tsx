@@ -20,7 +20,7 @@ export function ScanProgress({ done, everyMs = 3000 }: { done: boolean; everyMs?
   if (done) return null;
 
   return (
-    <p role="status" className="text-sm text-neutral-600">
+    <p role="status" className="text-sm text-ink-muted">
       Pillars land here as each one finishes. This page updates itself.
     </p>
   );

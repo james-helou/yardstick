@@ -15,18 +15,18 @@ async function DatabaseStatus() {
 
   return (
     <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
-      <dt className="text-neutral-500">Database</dt>
+      <dt className="text-ink-faint">Database</dt>
       <dd className="font-medium">reachable</dd>
-      <dt className="text-neutral-500">Migrations applied</dt>
+      <dt className="text-ink-faint">Migrations applied</dt>
       <dd className="font-medium tabular-nums">{n}</dd>
-      <dt className="text-neutral-500">Latest</dt>
+      <dt className="text-ink-faint">Latest</dt>
       <dd className="font-mono text-xs">{latest ?? "none"}</dd>
     </dl>
   );
 }
 
 function StatusSkeleton() {
-  return <div className="h-16 w-64 animate-pulse rounded bg-neutral-200" aria-hidden="true" />;
+  return <div className="skeleton h-16 w-64" aria-hidden="true" />;
 }
 
 export default function HealthPage() {

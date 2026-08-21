@@ -44,11 +44,11 @@ export default async function ScanPage({ params }: { params: Promise<{ id: strin
   return (
     <section className="flex flex-col gap-8">
       <div>
-        <Link href={`/businesses/${scan.businessId}`} className="text-sm text-neutral-600 hover:underline">
+        <Link href={`/businesses/${scan.businessId}`} className="back-link">
           Back to {scan.businessName}
         </Link>
         <h1 className="mt-1 text-xl font-semibold">Scan of {scan.businessName}</h1>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-ink-muted">
           {SCAN_STATUS_LABEL[scan.status]} · started {scan.createdAt.toISOString().slice(0, 16).replace("T", " ")}
         </p>
       </div>
@@ -57,7 +57,7 @@ export default async function ScanPage({ params }: { params: Promise<{ id: strin
         <ScoreBadge score={scan.score} size="large" />
         <ScanProgress done={done} />
         {scan.status === "failed" ? (
-          <p className="text-sm text-neutral-700">
+          <p className="text-sm text-ink">
             Nothing could be measured on this business yet. Link a Google listing or add a website, then run it again.
           </p>
         ) : null}

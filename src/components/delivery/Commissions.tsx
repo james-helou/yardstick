@@ -30,9 +30,9 @@ export function Commissions({
   pay: Action;
 }) {
   return (
-    <section className="rounded-md border p-4" aria-label="Commissions">
-      <h2 className="text-sm font-semibold">Commissions</h2>
-      <p className="mt-0.5 text-sm text-neutral-600">
+    <section className="panel panel-pad" aria-label="Commissions">
+      <h2 className="section-title">Commissions</h2>
+      <p className="mt-0.5 text-sm text-ink-muted">
         {plan === null
           ? "No rate set, so nothing is owed on anything signed. Set one and it applies from the next signature."
           : `${formatRate(plan.oneTimeBp)} of the setup, and ${formatRate(plan.monthlyBp)} of the retainer for ${plan.monthlyMonths === 1 ? "the first month" : `${plan.monthlyMonths} months`}.`}
@@ -48,7 +48,7 @@ export function Commissions({
             name="oneTimePercent"
             inputMode="decimal"
             defaultValue={plan ? plan.oneTimeBp / 100 : 10}
-            className="w-24 rounded border px-3 py-2 text-sm focus:outline-2 focus:outline-offset-2"
+            className="control w-24"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -60,7 +60,7 @@ export function Commissions({
             name="monthlyPercent"
             inputMode="decimal"
             defaultValue={plan ? plan.monthlyBp / 100 : 10}
-            className="w-24 rounded border px-3 py-2 text-sm focus:outline-2 focus:outline-offset-2"
+            className="control w-24"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -72,21 +72,21 @@ export function Commissions({
             name="monthlyMonths"
             inputMode="numeric"
             defaultValue={plan ? plan.monthlyMonths : 3}
-            className="w-24 rounded border px-3 py-2 text-sm focus:outline-2 focus:outline-offset-2"
+            className="control w-24"
           />
         </div>
         <button
           type="submit"
-          className="rounded border px-3 py-2 text-sm font-medium hover:bg-neutral-50 focus:outline-2 focus:outline-offset-2"
+          className="btn btn-secondary"
         >
           Save rate
         </button>
       </form>
 
       {lines.length === 0 ? (
-        <p className="mt-3 text-sm text-neutral-600">Nobody has earned anything yet.</p>
+        <p className="mt-3 text-sm text-ink-muted">Nobody has earned anything yet.</p>
       ) : (
-        <ul className="mt-3 flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200">
+        <ul className="panel mt-3 flex flex-col divide-y divide-line">
           {lines.map((line) => (
             <li
               key={`${line.userId}-${line.owed.currency}`}
@@ -94,7 +94,7 @@ export function Commissions({
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{line.label}</p>
-                <p className="text-xs text-neutral-600">
+                <p className="text-xs text-ink-muted">
                   {formatMoney(line.accrued)} earned
                   {line.paid.amount > 0 ? `, ${formatMoney(line.paid)} paid` : ""}
                 </p>
@@ -108,7 +108,7 @@ export function Commissions({
                     <input type="hidden" name="amount" value={line.owed.amount} />
                     <button
                       type="submit"
-                      className="rounded border px-3 py-1.5 text-xs font-medium hover:bg-neutral-50 focus:outline-2 focus:outline-offset-2"
+                      className="btn btn-secondary btn-sm"
                     >
                       Mark paid
                     </button>

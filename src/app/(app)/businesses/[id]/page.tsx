@@ -76,11 +76,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
   return (
     <section className="flex flex-col gap-8">
       <div>
-        <Link href="/businesses" className="text-sm text-neutral-600 hover:underline">
+        <Link href="/businesses" className="back-link">
           Back to businesses
         </Link>
         <h1 className="mt-1 text-xl font-semibold">{business.name}</h1>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-ink-muted">
           {STATUS_LABEL[business.status]}
           {place ? ` · ${place}` : ""}
         </p>
@@ -124,24 +124,24 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500">Scans</h2>
+          <h2 className="section-title">Scans</h2>
           <RunScanButton businessId={business.id} action={runScanAction} />
         </div>
 
         {scans.length === 0 ? (
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm text-ink-muted">
             No scans yet. A scan grades the Google profile, the reviews and the website, and takes
             about a minute.
           </p>
         ) : (
-          <ul className="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200">
+          <ul className="panel flex flex-col divide-y divide-line">
             {scans.map((scan) => (
               <li key={scan.id} className="flex items-center justify-between gap-4 px-4 py-3">
                 <div>
                   <Link href={`/scans/${scan.id}`} className="text-sm font-medium hover:underline">
                     {scan.createdAt.toISOString().slice(0, 16).replace("T", " ")}
                   </Link>
-                  <p className="text-xs text-neutral-600">{SCAN_STATUS_LABEL[scan.status]}</p>
+                  <p className="text-xs text-ink-muted">{SCAN_STATUS_LABEL[scan.status]}</p>
                 </div>
                 <ScoreBadge score={scan.score} />
               </li>
@@ -151,7 +151,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
       </div>
 
       <div>
-        <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-neutral-500">Details</h2>
+        <h2 className="section-title mb-3">Details</h2>
         <BusinessForm
           action={updateBusinessAction}
           submitLabel="Save changes"

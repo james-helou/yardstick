@@ -31,26 +31,26 @@ export function AiAnswers({ answers }: { answers: AiAnswer[] }) {
   const stamp = answers[0];
 
   return (
-    <section className="rounded-lg border border-neutral-200 p-4">
+    <section className="panel panel-pad">
       <h3 className="text-sm font-medium">What the assistant said</h3>
-      <p className="mt-0.5 text-xs text-neutral-600">
+      <p className="mt-0.5 text-xs text-ink-muted">
         Prompt set {stamp.promptSetVersion} · {stamp.model}
       </p>
 
       <ul className="mt-3 flex flex-col gap-2">
         {answers.map((answer) => (
           <li key={answer.id}>
-            <details className="rounded border border-neutral-200">
+            <details className="rounded border border-line">
               <summary className="cursor-pointer px-3 py-2 text-sm">
-                <span className={answer.mentioned ? "text-neutral-700" : "font-medium"}>{verdict(answer)}</span>
-                <span className="text-neutral-600"> · {answer.prompt}</span>
+                <span className={answer.mentioned ? "text-ink" : "font-medium"}>{verdict(answer)}</span>
+                <span className="text-ink-muted"> · {answer.prompt}</span>
               </summary>
-              <div className="border-t border-neutral-200 px-3 py-2">
-                <pre className="max-h-64 overflow-auto whitespace-pre-wrap text-sm text-neutral-800">
+              <div className="border-t border-line px-3 py-2">
+                <pre className="max-h-64 overflow-auto whitespace-pre-wrap text-sm text-ink">
                   {answer.response}
                 </pre>
                 {answer.competitors.length > 0 ? (
-                  <p className="mt-2 text-xs text-neutral-600">
+                  <p className="mt-2 text-xs text-ink-muted">
                     Also named: {answer.competitors.join(", ")}
                   </p>
                 ) : null}

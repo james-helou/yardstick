@@ -22,7 +22,7 @@ function AddButton() {
   return (
     <Link
       href="/businesses/new"
-      className="rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-700"
+      className="btn btn-primary"
     >
       Add a business
     </Link>
@@ -58,8 +58,8 @@ async function BusinessTable({ params }: { params: SearchParams }) {
         { label: "Archived", value: String(counts.archived) },
       ]}
     >
-      <table className="w-full text-sm">
-        <thead className="border-b bg-neutral-50">
+      <table className="list-table">
+        <thead>
           <tr>
             <SortableHeader<BusinessSort>
               column="name"
@@ -68,7 +68,7 @@ async function BusinessTable({ params }: { params: SearchParams }) {
               activeDirection={query.direction}
               href={(sort: BusinessSort, direction: SortDirection) => href({ sort, direction, page: 1 })}
             />
-            <th scope="col" className="px-3 py-2 text-left font-medium">
+            <th scope="col">
               Where
             </th>
             <SortableHeader<BusinessSort>
@@ -90,18 +90,18 @@ async function BusinessTable({ params }: { params: SearchParams }) {
         </thead>
         <tbody>
           {rows.map((business) => (
-            <tr key={business.id} className="border-b last:border-0 hover:bg-neutral-50">
+            <tr key={business.id}>
               <td className="px-3 py-2">
                 <Link href={`/businesses/${business.id}`} className="font-medium hover:underline">
                   {business.name}
                 </Link>
               </td>
-              <td className="px-3 py-2 text-neutral-600">
+              <td className="px-3 py-2 text-ink-muted">
                 {[business.locality, business.region, business.country].filter(Boolean).join(", ") ||
                   "Not recorded"}
               </td>
               <td className="px-3 py-2">{STATUS_LABEL[business.status]}</td>
-              <td className="px-3 py-2 text-right tabular-nums text-neutral-600">
+              <td className="px-3 py-2 text-right tabular-nums text-ink-muted">
                 {business.createdAt.toISOString().slice(0, 10)}
               </td>
             </tr>
@@ -113,7 +113,7 @@ async function BusinessTable({ params }: { params: SearchParams }) {
 }
 
 function TableSkeleton() {
-  return <div className="h-64 animate-pulse rounded-md bg-neutral-100" aria-hidden="true" />;
+  return <div className="skeleton h-64" aria-hidden="true" />;
 }
 
 export default async function BusinessesPage({

@@ -20,7 +20,7 @@ export default async function EmbedPage({ params }: { params: Promise<{ key: str
   return (
     <main className="mx-auto w-full max-w-md px-4 py-6">
       <h1 className="text-lg font-semibold">Free local search audit</h1>
-      <p className="mt-1 text-sm text-neutral-600">
+      <p className="mt-1 text-sm text-ink-muted">
         See how this business shows up on Google and in AI answers.
         {agency ? ` Prepared by ${agency.name}.` : ""}
       </p>

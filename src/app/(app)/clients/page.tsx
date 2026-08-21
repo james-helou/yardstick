@@ -20,14 +20,14 @@ export default function ClientsPage() {
     <section className="flex flex-col gap-8">
       <div>
         <h1 className="text-xl font-semibold">Clients</h1>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-ink-muted">
           Everyone who signed, what they are worth, and what is still owed to them.
         </p>
       </div>
 
       <GuardedSuspense
         label="Clients"
-        fallback={<div className="h-64 animate-pulse rounded-md bg-neutral-100" aria-hidden="true" />}
+        fallback={<div className="skeleton h-64" aria-hidden="true" />}
       >
         <Portfolio />
       </GuardedSuspense>
@@ -60,7 +60,7 @@ async function Portfolio() {
   if (engagements.length === 0) {
     return (
       <div className="flex flex-col gap-8">
-        <p className="text-sm text-neutral-600">
+        <p className="text-sm text-ink-muted">
           No signed proposals yet. The moment one is accepted, the client and the work it created
           appear here.
         </p>
@@ -79,13 +79,11 @@ async function Portfolio() {
       <PortfolioSummary portfolio={portfolio} />
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500">
-          Due next
-        </h2>
+        <h2 className="section-title">Due next</h2>
         {open.length === 0 ? (
-          <p className="text-sm text-neutral-600">Nothing outstanding. Everything owed is done.</p>
+          <p className="text-sm text-ink-muted">Nothing outstanding. Everything owed is done.</p>
         ) : (
-          <ul className="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200">
+          <ul className="panel flex flex-col divide-y divide-line">
             {open.map((item) => {
               const late = item.dueAt !== null && item.dueAt.getTime() < now.getTime();
               return (
@@ -97,14 +95,14 @@ async function Portfolio() {
                     >
                       {item.title}
                     </Link>
-                    <p className="text-xs text-neutral-600">
+                    <p className="text-xs text-ink-muted">
                       {WORK_KIND_LABEL[item.kind]}
                       {item.dueAt ? ` · due ${day(item.dueAt)}` : ""}
-                      {late ? " · overdue" : ""}
                     </p>
                   </div>
-                  <span className="text-xs text-neutral-600">
-                    {item.status === "doing" ? "In progress" : "To do"}
+                  {/* Late is the one state worth a colour here: it is the reason to look. */}
+                  <span className={`chip ${late ? "chip-weak" : ""}`}>
+                    {late ? "Overdue" : item.status === "doing" ? "In progress" : "To do"}
                   </span>
                 </li>
               );
@@ -121,10 +119,10 @@ async function Portfolio() {
       />
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500">
+        <h2 className="section-title">
           The book
         </h2>
-        <ul className="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200">
+        <ul className="panel flex flex-col divide-y divide-line">
           {engagements.map((engagement) => (
             <li
               key={engagement.id}
@@ -137,13 +135,13 @@ async function Portfolio() {
                 >
                   {engagement.businessName ?? "Unnamed"}
                 </Link>
-                <p className="text-xs text-neutral-600">
+                <p className="text-xs text-ink-muted">
                   {engagement.status === "ended"
                     ? `Ended ${day(engagement.endedAt)}${engagement.endedReason ? `. ${engagement.endedReason}` : ""}`
                     : `Since ${day(engagement.startedAt)}`}
                 </p>
               </div>
-              <p className="text-sm tabular-nums text-neutral-700">
+              <p className="text-sm tabular-nums text-ink">
                 {engagement.monthly.amount > 0
                   ? `${formatMoney(engagement.monthly)} / month`
                   : formatMoney(engagement.oneTime)}

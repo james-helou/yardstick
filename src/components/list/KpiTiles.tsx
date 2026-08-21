@@ -15,10 +15,17 @@ const TONE_NOTE: Record<Exclude<KpiTone, "neutral">, string> = {
 };
 
 const TONE_CLASS: Record<KpiTone, string> = {
-  neutral: "border-neutral-200",
-  good: "border-emerald-300",
-  warning: "border-amber-300",
-  critical: "border-red-300",
+  neutral: "border-line",
+  good: "border-band-strong-line",
+  warning: "border-band-fair-line",
+  critical: "border-band-critical-line",
+};
+
+const TONE_INK: Record<KpiTone, string> = {
+  neutral: "text-ink-muted",
+  good: "text-band-strong",
+  warning: "text-band-fair",
+  critical: "text-band-critical",
 };
 
 /**
@@ -27,25 +34,25 @@ const TONE_CLASS: Record<KpiTone, string> = {
  */
 export function KpiTiles({ tiles }: { tiles: readonly KpiTile[] }) {
   return (
-    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fit,minmax(11rem,1fr))]">
       {tiles.map((tile) => {
         const tone = tile.tone ?? "neutral";
         return (
           <li
             key={tile.label}
             data-tone={tone}
-            className={`rounded-md border p-3 ${TONE_CLASS[tone]}`}
+            className={`panel flex flex-col gap-1 p-3 ${TONE_CLASS[tone]}`}
           >
-            <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-              {tile.label}
-            </p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums">
-              {tile.value ?? <span className="text-base font-normal text-neutral-500">Not yet measured</span>}
+            <p className="text-xs font-medium text-ink-muted">{tile.label}</p>
+            <p className="data text-xl font-semibold">
+              {tile.value ?? (
+                <span className="text-sm font-normal text-ink-faint">Not yet measured</span>
+              )}
             </p>
             {tone !== "neutral" ? (
-              <p className="mt-1 text-xs font-medium text-neutral-600">{TONE_NOTE[tone]}</p>
+              <p className={`text-xs font-medium ${TONE_INK[tone]}`}>{TONE_NOTE[tone]}</p>
             ) : null}
-            {tile.hint ? <p className="mt-1 text-xs text-neutral-500">{tile.hint}</p> : null}
+            {tile.hint ? <p className="text-xs text-ink-faint">{tile.hint}</p> : null}
           </li>
         );
       })}

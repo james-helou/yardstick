@@ -30,9 +30,9 @@ export function ShareProposal({
 
   if (!url) {
     return (
-      <div className="rounded-md border p-4">
-        <h2 className="text-sm font-semibold">Send it to the client</h2>
-        <p className="mt-0.5 text-sm text-neutral-600">
+      <div className="panel panel-pad">
+        <h2 className="section-title">Send it to the client</h2>
+        <p className="mt-0.5 text-sm text-ink-muted">
           Creates a link they can open and sign, with no login. You can revoke it at any time.
         </p>
         <form action={shareAction} className="mt-3">
@@ -45,17 +45,17 @@ export function ShareProposal({
   }
 
   return (
-    <div className="rounded-md border p-4">
-      <h2 className="text-sm font-semibold">Signing link</h2>
-      <p className="mt-0.5 text-sm text-neutral-600">
+    <div className="panel panel-pad">
+      <h2 className="section-title">Signing link</h2>
+      <p className="mt-0.5 text-sm text-ink-muted">
         {views === 0 ? "Not opened yet" : `Opened ${views} time${views === 1 ? "" : "s"}`}
       </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <code className="rounded border bg-neutral-50 px-2 py-1 text-sm break-all">{url}</code>
+        <code className="rounded-sm border border-line bg-surface-2 px-2 py-1 break-all">{url}</code>
         <button
           type="button"
-          className="rounded border px-3 py-1 text-sm hover:bg-neutral-50"
+          className="btn btn-secondary btn-sm"
           onClick={async () => {
             await navigator.clipboard.writeText(url);
             setCopied(true);
@@ -65,7 +65,7 @@ export function ShareProposal({
         </button>
         <form action={revokeAction}>
           <input type="hidden" name="proposalId" value={proposalId} />
-          <SubmitButton label="Revoke" pendingLabel="Revoking" />
+          <SubmitButton label="Revoke" pendingLabel="Revoking" variant="danger" />
         </form>
       </div>
       <FormError message={revokeState.errors.form} />

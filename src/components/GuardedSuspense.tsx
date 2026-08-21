@@ -25,15 +25,15 @@ class RenderErrorBoundary extends Component<BoundaryProps, { error: Error | null
 
 function SectionError({ label, onRetry }: { label: string; onRetry: () => void }) {
   return (
-    <div role="alert" className="rounded-md border border-red-300 bg-red-50 p-4 text-sm">
-      <p className="font-medium text-red-900">{label} could not load.</p>
-      <p className="mt-1 text-red-800">
+    <div role="alert" className="rounded-md border border-band-critical-line bg-band-critical-soft p-4">
+      <p className="font-medium text-band-critical">{label} could not load.</p>
+      <p className="mt-1 text-band-critical">
         The data source did not respond. Nothing was lost, and nothing was saved.
       </p>
       <button
         type="button"
         onClick={onRetry}
-        className="mt-3 rounded border border-red-400 px-3 py-1 font-medium text-red-900 hover:bg-red-100"
+        className="btn btn-danger btn-sm mt-3"
       >
         Try again
       </button>

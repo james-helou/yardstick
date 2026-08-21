@@ -44,10 +44,12 @@ export function PortfolioSummary({ portfolio }: { portfolio: Portfolio }) {
 
 function Figure({ label, value, note }: { label: string; value: string; note: string }) {
   return (
-    <div className="rounded-md border p-4">
-      <dt className="text-xs font-medium uppercase tracking-wide text-neutral-500">{label}</dt>
-      <dd className="mt-1 text-lg font-semibold tabular-nums">{value}</dd>
-      <p className="mt-0.5 text-xs text-neutral-600">{note}</p>
+    <div className="panel panel-pad">
+      <dt className="text-xs font-medium text-ink-muted">{label}</dt>
+      <dd className="mt-1">
+        <span className="data text-lg font-semibold">{value}</span>
+        <span className="mt-0.5 block text-xs text-ink-muted">{note}</span>
+      </dd>
     </div>
   );
 }

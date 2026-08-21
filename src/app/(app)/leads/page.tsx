@@ -37,10 +37,10 @@ async function LeadTable({ params }: { params: SearchParams }) {
       href={(page) => href({ page })}
       filters={<UrlSearchInput label="Search" placeholder="Email or business" />}
     >
-      <table className="w-full text-sm">
-        <thead className="border-b bg-neutral-50">
+      <table className="list-table">
+        <thead>
           <tr>
-            <th scope="col" className="px-3 py-2 text-left font-medium">
+            <th scope="col">
               Business
             </th>
             <SortableHeader<LeadSort>
@@ -50,10 +50,10 @@ async function LeadTable({ params }: { params: SearchParams }) {
               activeDirection={query.direction}
               href={sortHref}
             />
-            <th scope="col" className="px-3 py-2 text-left font-medium">
+            <th scope="col">
               Report sent
             </th>
-            <th scope="col" className="px-3 py-2 text-right font-medium">
+            <th scope="col" className="text-right">
               Score
             </th>
             <SortableHeader<LeadSort>
@@ -68,21 +68,21 @@ async function LeadTable({ params }: { params: SearchParams }) {
         </thead>
         <tbody>
           {rows.map((lead) => (
-            <tr key={lead.id} className="border-b last:border-0 hover:bg-neutral-50">
+            <tr key={lead.id}>
               <td className="px-3 py-2">
                 {lead.businessId ? (
                   <Link href={`/businesses/${lead.businessId}`} className="font-medium hover:underline">
                     {lead.businessName ?? "Business"}
                   </Link>
                 ) : (
-                  <span className="text-neutral-600">{lead.businessName ?? "Deleted"}</span>
+                  <span className="text-ink-muted">{lead.businessName ?? "Deleted"}</span>
                 )}
               </td>
               <td className="px-3 py-2">
                 <a href={`mailto:${lead.email}`} className="hover:underline">
                   {lead.email}
                 </a>
-                {lead.contactName ? <span className="text-neutral-600"> · {lead.contactName}</span> : null}
+                {lead.contactName ? <span className="text-ink-muted"> · {lead.contactName}</span> : null}
               </td>
               <td className="px-3 py-2">
                 <DeliveryChip delivery={delivered.get(lead.id) ?? null} />
@@ -96,7 +96,7 @@ async function LeadTable({ params }: { params: SearchParams }) {
                   <ScoreBadge score={null} />
                 )}
               </td>
-              <td className="px-3 py-2 text-right tabular-nums text-neutral-600">
+              <td className="px-3 py-2 text-right tabular-nums text-ink-muted">
                 {lead.createdAt.toISOString().slice(0, 10)}
               </td>
             </tr>
@@ -112,12 +112,12 @@ async function LeadTable({ params }: { params: SearchParams }) {
  * list, not buried in a log, because the rep has to pick up the phone instead.
  */
 function DeliveryChip({ delivery }: { delivery: EmailDelivery | null }) {
-  if (!delivery) return <span className="text-neutral-400">Not yet</span>;
+  if (!delivery) return <span className="text-ink-faint">Not yet</span>;
 
   const look: Record<EmailDelivery["status"], string> = {
-    sent: "bg-emerald-50 text-emerald-800",
-    skipped: "bg-amber-50 text-amber-800",
-    failed: "bg-rose-50 text-rose-800",
+    sent: "chip-strong",
+    skipped: "chip-fair",
+    failed: "chip-critical",
   };
   const words: Record<EmailDelivery["status"], string> = {
     sent: "Sent",
@@ -127,7 +127,7 @@ function DeliveryChip({ delivery }: { delivery: EmailDelivery | null }) {
 
   return (
     <span
-      className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${look[delivery.status]}`}
+      className={`chip ${look[delivery.status]}`}
       title={delivery.error ?? `Sent ${delivery.createdAt.toISOString().slice(0, 10)}`}
     >
       {words[delivery.status]}
@@ -136,7 +136,7 @@ function DeliveryChip({ delivery }: { delivery: EmailDelivery | null }) {
 }
 
 function TableSkeleton() {
-  return <div className="h-64 animate-pulse rounded-md bg-neutral-100" aria-hidden="true" />;
+  return <div className="skeleton h-64" aria-hidden="true" />;
 }
 
 export default async function LeadsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {

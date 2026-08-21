@@ -30,9 +30,9 @@ export function TrackingPanel({
   const day = (date: Date | null) => (date ? date.toISOString().slice(0, 10) : null);
 
   return (
-    <section className="rounded-md border p-4">
-      <h2 className="text-sm font-semibold">Tracking</h2>
-      <p className="mt-0.5 text-sm text-neutral-600">
+    <section className="panel panel-pad">
+      <h2 className="section-title">Tracking</h2>
+      <p className="mt-0.5 text-sm text-ink-muted">
         {cadence === null
           ? "Not measured on a schedule. A one-off scan is still a scan."
           : paused
@@ -51,7 +51,7 @@ export function TrackingPanel({
             id="cadence"
             name="cadence"
             defaultValue={cadence ?? "monthly"}
-            className="rounded border px-3 py-2 text-sm focus:outline-2 focus:outline-offset-2"
+            className="control"
           >
             {CADENCES.map((option) => (
               <option key={option} value={option}>
@@ -60,7 +60,7 @@ export function TrackingPanel({
             ))}
           </select>
         </div>
-        <button type="submit" className="rounded border px-3 py-2 text-sm hover:bg-neutral-50">
+        <button type="submit" className="btn btn-secondary">
           {cadence === null ? "Start tracking" : "Change cadence"}
         </button>
       </form>
@@ -69,13 +69,13 @@ export function TrackingPanel({
         <div className="mt-3 flex flex-wrap gap-2">
           <form action={paused ? resume : pause}>
             <input type="hidden" name="businessId" value={businessId} />
-            <button type="submit" className="rounded border px-3 py-1 text-sm hover:bg-neutral-50">
+            <button type="submit" className="btn btn-secondary btn-sm">
               {paused ? "Resume" : "Pause"}
             </button>
           </form>
           <form action={stop}>
             <input type="hidden" name="businessId" value={businessId} />
-            <button type="submit" className="rounded border px-3 py-1 text-sm hover:bg-neutral-50">
+            <button type="submit" className="btn btn-secondary btn-sm">
               Stop tracking
             </button>
           </form>
