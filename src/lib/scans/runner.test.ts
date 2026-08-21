@@ -24,7 +24,6 @@ const DETAILS: PlaceDetails = {
   websiteUrl: "https://brightsmile.ca",
   phone: "+1 514-555-0100",
   openingHours: ["Monday: 9 to 5"],
-  description: "A dental clinic",
   photoCount: 8,
   businessStatus: "OPERATIONAL",
   rating: 4.8,

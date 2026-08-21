@@ -148,7 +148,6 @@ describe("googlePlaces.details", () => {
       rating: 4.7,
       reviewCount: 212,
       openingHours: ["Monday: 9 AM to 5 PM"],
-      description: "Dental clinic in Montreal",
       photoCount: 4,
       businessStatus: "OPERATIONAL",
       categories: ["dentist", "health"],
@@ -162,6 +161,8 @@ describe("googlePlaces.details", () => {
     expect(url).toBe("https://places.googleapis.com/v1/places/ChIJ_dental");
     expect(init.method).toBe("GET");
     expect(init.headers["X-Goog-FieldMask"]).toContain("reviews");
+    // Nothing grades on Google's editorial summary any more, so we stop asking for it.
+    expect(init.headers["X-Goog-FieldMask"]).not.toContain("editorialSummary");
   });
 
   it("treats a listing that has been removed as an answer, not a failure", async () => {

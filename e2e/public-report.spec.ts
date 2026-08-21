@@ -50,7 +50,7 @@ async function signUpAndScan(page: Page): Promise<void> {
   await page.getByLabel("Website").fill("riveraplumbing.example");
   await page.getByRole("button", { name: "Add business" }).click();
 
-  await page.getByRole("button", { name: "Run a scan" }).click();
+  await page.getByRole("button", { name: "Run diagnostics" }).click();
   await expect(page).toHaveURL(/\/scans\/[0-9a-f-]{36}$/);
 }
 

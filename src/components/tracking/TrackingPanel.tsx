@@ -34,7 +34,7 @@ export function TrackingPanel({
       <h2 className="section-title">Tracking</h2>
       <p className="mt-0.5 text-sm text-ink-muted">
         {cadence === null
-          ? "Not measured on a schedule. A one-off scan is still a scan."
+          ? "Not measured on a schedule. A one-off diagnostic still counts."
           : paused
             ? `${CADENCE_LABEL[cadence]}, paused.`
             : `${CADENCE_LABEL[cadence]}. Next on ${day(nextRunAt)}.`}

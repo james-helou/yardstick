@@ -9,7 +9,7 @@ import { countScansByStatus, listScans, SCAN_LIST_SPEC, type ScanSort } from "@/
 import { parseListQuery, toSearchParams, type SortDirection } from "@/lib/list/query";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Scans" };
+export const metadata = { title: "Diagnostics" };
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -39,8 +39,8 @@ async function ScanTable({ params }: { params: SearchParams }) {
 
   return (
     <ListShell
-      title="Scans"
-      noun="scans"
+      title="Diagnostics"
+      noun="diagnostics"
       search={query.search}
       window={window}
       href={(page) => href({ page })}
@@ -49,7 +49,7 @@ async function ScanTable({ params }: { params: SearchParams }) {
         { label: "Complete", value: String(counts.complete) },
         { label: "In flight", value: String(counts.queued + counts.running) },
         { label: "Nothing measured", value: String(counts.failed) },
-        { label: "Scan credits", value: String(credits) },
+        { label: "Diagnostic credits", value: String(credits) },
       ]}
     >
       <table className="list-table">
@@ -113,7 +113,7 @@ function TableSkeleton() {
 export default async function ScansPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
   return (
-    <GuardedSuspense label="Scans" fallback={<TableSkeleton />}>
+    <GuardedSuspense label="Diagnostics" fallback={<TableSkeleton />}>
       <ScanTable params={params} />
     </GuardedSuspense>
   );

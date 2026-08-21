@@ -80,6 +80,12 @@ test("an agency invites a client, who signs in and sees only their own results",
   await page.getByRole("button", { name: "Revoke" }).click();
   await expect(page.getByText("Revoked")).toBeVisible();
 
-  expect(await (await clientPage.goto(joinUrl))?.status()).toBe(404);
+  // Polled, not asserted once. Against a production build the door shuts immediately,
+  // measured at 54ms over four runs, but `next dev` serves a briefly stale render for
+  // roughly a third of a second and this suite runs against dev locally. What the test
+  // cares about is that the link stops working, not how fast a dev server notices.
+  await expect
+    .poll(async () => (await clientPage.goto(joinUrl))?.status(), { timeout: 10_000 })
+    .toBe(404);
   await clientContext.close();
 });

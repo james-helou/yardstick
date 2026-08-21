@@ -14,7 +14,6 @@ const COMPLETE: PlaceDetails = {
   websiteUrl: "https://brightsmile.ca",
   phone: "+1 514-555-0100",
   openingHours: ["Monday: 9 to 5"],
-  description: "A dental clinic",
   photoCount: 8,
   businessStatus: "OPERATIONAL",
 };
@@ -34,6 +33,13 @@ describe("scoreGbpProfile", () => {
     expect(website?.ok).toBe(false);
     expect(website?.detail).toContain("dead end");
     expect(outcome.score).toBeLessThan(90);
+  });
+
+  it("does not grade a business on an editorial summary Google writes", () => {
+    // `editorialSummary` is Google's own blurb about places it finds notable. It is not
+    // the description an owner writes in their profile, which Places does not expose at
+    // all, so no work by the business or the agency could ever have made this pass.
+    expect(scoreGbpProfile(COMPLETE).findings.map((f) => f.code)).not.toContain("description");
   });
 
   it("does not claim zero photos when Google withheld the field", () => {
@@ -72,10 +78,10 @@ describe("scoreGbpProfile", () => {
 
   it("scores an empty profile near nothing without throwing", () => {
     const outcome = scoreGbpProfile({ placeId: "p2", name: "Corner Barber" });
-    // Three points of fifteen. Only "listing marked open" passes, and it passes on the
-    // absence of a closed flag rather than on evidence. Fifteen and not sixteen because
-    // photos cannot be judged when the provider sent no photo array at all.
-    expect(outcome.score).toBe(20);
+    // Three points of fourteen. Only "listing marked open" passes, and it passes on the
+    // absence of a closed flag rather than on evidence. Fourteen because photos cannot be
+    // judged when the provider sent no photo array at all.
+    expect(outcome.score).toBe(21);
     expect(outcome.status).toBe("ok");
   });
 });

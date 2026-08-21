@@ -124,14 +124,14 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="section-title">Scans</h2>
+          <h2 className="section-title">Diagnostics</h2>
           <RunScanButton businessId={business.id} action={runScanAction} />
         </div>
 
         {scans.length === 0 ? (
           <p className="text-sm text-ink-muted">
-            No scans yet. A scan grades the Google profile, the reviews and the website, and takes
-            about a minute.
+            Nothing run yet. A diagnostic grades the Google profile, the reviews and the website,
+            and takes about a minute.
           </p>
         ) : (
           <ul className="panel flex flex-col divide-y divide-line">

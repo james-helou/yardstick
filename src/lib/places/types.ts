@@ -45,7 +45,6 @@ export type PlaceDetails = PlaceCandidate & {
   reviews?: PlaceReview[];
   /** One string per weekday, as the provider phrases it. */
   openingHours?: string[];
-  description?: string;
   photoCount?: number;
   /** "OPERATIONAL", "CLOSED_TEMPORARILY", and friends. */
   businessStatus?: string;

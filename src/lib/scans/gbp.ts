@@ -43,12 +43,6 @@ export function scoreGbpProfile(details: PlaceDetails): PillarOutcome {
       ok: has(details.addressLine) && has(details.locality),
       weight: 2,
     },
-    {
-      code: "description",
-      label: "Business description written",
-      ok: has(details.description),
-      weight: 1,
-    },
     // An absent photo array is not a claim of zero. Google withholds photos entirely on
     // our key, and "0 photos on the listing" is a false statement about a business that
     // has plenty, in a report the business is invited to check.

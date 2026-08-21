@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 const DESTINATIONS = [
   { href: "/businesses", label: "Businesses" },
-  { href: "/scans", label: "Scans" },
+  { href: "/scans", label: "Diagnostics" },
   { href: "/leads", label: "Leads" },
   { href: "/proposals", label: "Proposals" },
   { href: "/follow-ups", label: "Follow-ups" },

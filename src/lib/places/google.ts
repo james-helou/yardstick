@@ -37,7 +37,6 @@ const DETAILS_FIELD_MASK = [
   "userRatingCount",
   "reviews",
   "regularOpeningHours.weekdayDescriptions",
-  "editorialSummary",
   "photos",
 ].join(",");
 
@@ -67,7 +66,6 @@ type GoogleDetails = GooglePlace & {
     authorAttribution?: { displayName?: string };
   }[];
   regularOpeningHours?: { weekdayDescriptions?: string[] };
-  editorialSummary?: { text?: string };
   photos?: unknown[];
 };
 
@@ -145,7 +143,6 @@ export function toDetails(place: GoogleDetails): PlaceDetails | null {
     ...maybe("reviewCount", place.userRatingCount),
     ...(reviews.length > 0 ? { reviews } : {}),
     ...maybe("openingHours", place.regularOpeningHours?.weekdayDescriptions),
-    ...maybe("description", place.editorialSummary?.text?.trim() || undefined),
     ...maybe("photoCount", place.photos?.length),
   };
 }

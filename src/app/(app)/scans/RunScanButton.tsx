@@ -7,7 +7,7 @@ import { EMPTY_FORM_STATE, type FormState } from "@/lib/forms/state";
 export function RunScanButton({
   businessId,
   action,
-  label = "Run a scan",
+  label = "Run diagnostics",
 }: {
   businessId: string;
   action: (state: FormState, formData: FormData) => Promise<FormState>;

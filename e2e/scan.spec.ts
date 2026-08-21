@@ -27,12 +27,12 @@ test("an agency runs a scan on a business and watches the report", async ({ page
   await page.getByRole("button", { name: "Add business" }).click();
   await expect(page).toHaveURL(/\/businesses\/[0-9a-f-]{36}$/);
 
-  await expect(page.getByText("No scans yet.")).toBeVisible();
-  await page.getByRole("button", { name: "Run a scan" }).click();
+  await expect(page.getByText("Nothing run yet.")).toBeVisible();
+  await page.getByRole("button", { name: "Run diagnostics" }).click();
 
   // The report, before any pillar has reported.
   await expect(page).toHaveURL(/\/scans\/[0-9a-f-]{36}$/);
-  await expect(page.getByRole("heading", { name: "Scan of Rivera Plumbing" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Diagnostics for Rivera Plumbing" })).toBeVisible();
   await expect(page.getByText("Not scored")).toBeVisible();
   for (const pillar of ["Google profile", "Reputation", "Site health"]) {
     await expect(page.getByRole("heading", { name: pillar })).toBeVisible();
@@ -40,7 +40,7 @@ test("an agency runs a scan on a business and watches the report", async ({ page
   await expect(page.getByText("Still running").first()).toBeVisible();
 
   // And it is listed, against the business it measured.
-  await page.getByRole("link", { name: "Scans" }).first().click();
+  await page.getByRole("link", { name: "Diagnostics" }).first().click();
   await expect(page).toHaveURL(/\/scans$/);
   await expect(page.getByRole("link", { name: "Rivera Plumbing" })).toBeVisible();
   await expect(page.getByRole("cell", { name: "Queued" })).toBeVisible();

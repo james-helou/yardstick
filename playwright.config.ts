@@ -21,10 +21,22 @@ export default defineConfig({
   // progressively-enhanced form posts work.
   use: { baseURL: `http://localhost:${PORT}`, trace: "retain-on-failure" },
   webServer: {
-    command: `next dev --port ${PORT}`,
+    /**
+     * Dev locally for the fast loop, a real build in CI.
+     *
+     * These are not the same runtime. A revoked portal link kept returning 200 for about
+     * a third of a second under `next dev`, which is a stale render the dev server serves
+     * and production does not: against `next start` the same link 404s in 54ms, every
+     * time. A suite that only ever runs against dev can fail for reasons production will
+     * never have, and pass for reasons production will never share, so the gate runs
+     * against what Railway actually runs.
+     */
+    command: process.env.CI
+      ? `next build && next start --port ${PORT}`
+      : `next dev --port ${PORT}`,
     url: `http://localhost:${PORT}/health`,
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: process.env.CI ? 300_000 : 120_000,
     env: {
       DATABASE_URL,
       BETTER_AUTH_SECRET: "e2e-secret-that-is-long-enough-to-pass-validation",

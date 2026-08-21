@@ -47,7 +47,7 @@ export default async function ScanPage({ params }: { params: Promise<{ id: strin
         <Link href={`/businesses/${scan.businessId}`} className="back-link">
           Back to {scan.businessName}
         </Link>
-        <h1 className="mt-1 text-xl font-semibold">Scan of {scan.businessName}</h1>
+        <h1 className="mt-1 text-xl font-semibold">Diagnostics for {scan.businessName}</h1>
         <p className="mt-1 text-sm text-ink-muted">
           {SCAN_STATUS_LABEL[scan.status]} · started {scan.createdAt.toISOString().slice(0, 16).replace("T", " ")}
         </p>
