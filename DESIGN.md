@@ -30,15 +30,33 @@ only warmth on screen and both read as signal.
 | `--bg` | `oklch(0.985 0.002 258)` | `oklch(0.186 0.008 258)` | page ground |
 | `--surface` | `oklch(1 0 0)` | `oklch(0.225 0.009 258)` | panels, cards, rows |
 | `--surface-2` | `oklch(0.966 0.004 258)` | `oklch(0.262 0.010 258)` | header, toolbars, sunken wells |
-| `--line` | `oklch(0.906 0.006 258)` | `oklch(0.318 0.012 258)` | hairlines and borders |
-| `--line-strong` | `oklch(0.845 0.008 258)` | `oklch(0.40 0.014 258)` | control borders, dividers that matter |
+| `--line` | `oklch(0.906 0.006 258)` | `oklch(0.318 0.012 258)` | panel edges, row dividers |
+| `--line-strong` | `oklch(0.643 0.008 258)` | `oklch(0.536 0.014 258)` | control borders |
 | `--ink` | `oklch(0.225 0.015 258)` | `oklch(0.945 0.004 258)` | body text |
 | `--ink-muted` | `oklch(0.465 0.012 258)` | `oklch(0.735 0.008 258)` | captions, secondary text |
-| `--ink-faint` | `oklch(0.575 0.010 258)` | `oklch(0.640 0.008 258)` | tick labels, placeholders |
+| `--ink-faint` | `oklch(0.544 0.010 258)` | `oklch(0.640 0.008 258)` | tick labels, placeholders |
 
-`--ink-muted` on `--bg` is roughly 7:1 and `--ink-faint` roughly 4.6:1, so even the
-quietest text clears AA for body copy. There is no lighter grey than `--ink-faint`; if
-something needs to recede further, make it smaller or move it, do not fade it.
+`--ink-muted` sits at 6.7:1 on `--bg` and `--ink-faint` at 4.76:1, so even the quietest
+text clears AA. `--ink-faint` was originally a step lighter and measured 3.96:1 against
+`--surface-2`, which is the sort of thing that survives review by eye for ever. It is
+darker now because the check below is arithmetic rather than opinion. There is no lighter
+grey than `--ink-faint`. If something needs to recede further, make it smaller or move it,
+do not fade it.
+
+**The palette is a test, not a promise.** `src/lib/design/contrast.test.ts` reads
+`globals.css`, rebuilds both palettes the way the cascade does, and asserts a table of
+foreground-on-background pairs: 4.5:1 for anything that is text, 3:1 for anything whose job
+is to identify a control. It also fails when a colour token exists that the table does not
+mention, so a new colour cannot be added without saying what it must clear and where.
+Yardstick tells other people their site fails its checks, so it does not get to ship a
+palette that fails the same check.
+
+**Two borders, two rules.** `--line` separates things that are already distinguishable by
+their content, so it is free to be a hairline and WCAG 1.4.11 does not reach it. A control
+is different: its border is the only thing that says where the input is, because its fill
+is the same colour as the panel behind it. So `--line-strong` owes 3:1 against every ground
+a control can sit on, and it is the only border that does. Holding the hairline to the same
+number would turn a quiet instrument into a grid of boxes.
 
 ### Accent (brass, hue 70)
 
@@ -156,8 +174,17 @@ Breakpoints are structural, never typographic.
   from tests and assistive tech, and an agency scanning a queue reads down a column.
 - **Panels.** Two-up grids collapse to one column at 768px. Forms are single column
   throughout except for genuinely paired fields.
-- **Targets.** Anything tappable is at least 44px tall in the phone contexts, which is the
-  nav, the score screens, the checklist, the proposal and the portal.
+- **Targets.** WCAG 2.2 asks for 24x24 minimum, and the product goes further where a thumb
+  is the input device: every `.btn` and `.control` reaches 44px under `pointer: coarse`,
+  and a row's name link takes over its cell's padding so the whole height of the row is
+  tappable rather than the 17px its text happened to occupy. The one deliberate exception
+  is a link inside a sentence ("No account yet? Create one"), which the spec exempts,
+  because padding the words around it to make a bigger target would be worse.
+- **Absolutely positioned children escape a scroller.** An `overflow` ancestor only clips
+  an absolutely positioned descendant when it is that descendant's containing block, so
+  `.table-scroll` is `position: relative`. Without it the `sr-only` label on a header cell
+  sat 155px past the right edge of a phone and dragged the whole document sideways, on one
+  screen only, which is exactly how long that kind of bug survives.
 
 ## Components
 

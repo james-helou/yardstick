@@ -12,11 +12,15 @@
   --bg: oklch(0.985 0.002 258);
   --surface: oklch(1 0 0);
   --surface-2: oklch(0.966 0.004 258);
+  /* Two borders, two jobs, two rules. `--line` separates things that are already
+   * distinguishable (panel edges, table rows), so it is free to be a hairline.
+   * `--line-strong` is the only thing that identifies a control, so it owes WCAG
+   * 1.4.11 a 3:1 ratio against every ground a control can sit on. */
   --line: oklch(0.906 0.006 258);
-  --line-strong: oklch(0.845 0.008 258);
+  --line-strong: oklch(0.643 0.008 258);
   --ink: oklch(0.225 0.015 258);
   --ink-muted: oklch(0.465 0.012 258);
-  --ink-faint: oklch(0.575 0.01 258);
+  --ink-faint: oklch(0.544 0.01 258);
 
   /* Brass is structure, never state: the wordmark, tick marks, the current nav
    * item, the focus ring, the rule on a section heading. Nothing else. */
@@ -59,7 +63,7 @@
     --surface: oklch(0.225 0.009 258);
     --surface-2: oklch(0.262 0.01 258);
     --line: oklch(0.318 0.012 258);
-    --line-strong: oklch(0.4 0.014 258);
+    --line-strong: oklch(0.536 0.014 258);
     --ink: oklch(0.945 0.004 258);
     --ink-muted: oklch(0.735 0.008 258);
     --ink-faint: oklch(0.64 0.008 258);
@@ -489,7 +493,33 @@
     padding-right: 1rem;
   }
 
+  /* WCAG 2.2 target size. A link is otherwise only as tall as its own text, which put
+   * every row name and every sort header at 17 to 19px. */
+  .list-table a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.5rem;
+  }
+  /* On a phone the row name is the thing a thumb goes for, so it takes over the cell's
+   * padding and becomes the full height of the row rather than growing it. */
+  @media (pointer: coarse) {
+    .list-table td:first-child {
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+    .list-table td:first-child a {
+      min-height: 2.75rem;
+      padding-block: 0.55rem;
+    }
+  }
+
   .table-scroll {
+    /* Positioned so it becomes the containing block for what it holds. An `overflow`
+     * ancestor only clips an absolutely positioned descendant when it is that
+     * descendant's containing block, so without this the `sr-only` label on a header
+     * cell escapes the scroller, lands past the right edge of a phone, and drags the
+     * document sideways with it. */
+    position: relative;
     overflow-x: auto;
     overscroll-behavior-x: contain;
   }

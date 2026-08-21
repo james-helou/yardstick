@@ -27,55 +27,57 @@ async function Catalog() {
       </div>
 
       {items.length === 0 ? (
-        <p className="rounded-md border border-dashed border-line-strong px-3 py-6 text-center text-ink-muted">
+        <p className="rounded-md border border-dashed border-line px-3 py-6 text-center text-ink-muted">
           Nothing in the catalogue yet. Add the thing you sell most often first.
         </p>
       ) : (
-        <table className="list-table">
-          <thead>
-            <tr>
-              <th scope="col">
-                Item
-              </th>
-              <th scope="col">
-                Billing
-              </th>
-              <th scope="col" className="text-right">
-                Price
-              </th>
-              <th scope="col" className="text-right">
-                <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.id}>
-                <td className="px-3 py-2">
-                  <span className="font-medium">{item.name}</span>
-                  {item.description ? (
-                    <span className="block text-xs text-ink-muted">{item.description}</span>
-                  ) : null}
-                </td>
-                <td className="px-3 py-2 text-ink-muted">
-                  {item.billing === "monthly" ? "Every month" : "One time"}
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums">
-                  {formatMoney(item.unitPrice)}
-                  <span className="block text-xs text-ink-faint">{amountToInput(item.unitPrice)}</span>
-                </td>
-                <td className="px-3 py-2 text-right">
-                  <form action={archiveServiceItemAction}>
-                    <input type="hidden" name="id" value={item.id} />
-                    <button type="submit" className="btn btn-secondary btn-sm">
-                      Archive
-                    </button>
-                  </form>
-                </td>
+        <div className="table-scroll panel">
+          <table className="list-table">
+            <thead>
+              <tr>
+                <th scope="col">
+                  Item
+                </th>
+                <th scope="col">
+                  Billing
+                </th>
+                <th scope="col" className="text-right">
+                  Price
+                </th>
+                <th scope="col" className="text-right">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr key={item.id}>
+                  <td className="px-3 py-2">
+                    <span className="font-medium">{item.name}</span>
+                    {item.description ? (
+                      <span className="block text-xs text-ink-muted">{item.description}</span>
+                    ) : null}
+                  </td>
+                  <td className="px-3 py-2 text-ink-muted">
+                    {item.billing === "monthly" ? "Every month" : "One time"}
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {formatMoney(item.unitPrice)}
+                    <span className="block text-xs text-ink-faint">{amountToInput(item.unitPrice)}</span>
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <form action={archiveServiceItemAction}>
+                      <input type="hidden" name="id" value={item.id} />
+                      <button type="submit" className="btn btn-secondary btn-sm">
+                        Archive
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <CatalogForm action={createServiceItemAction} currency={currency} />

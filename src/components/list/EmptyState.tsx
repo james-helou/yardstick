@@ -17,7 +17,7 @@ export type EmptyStateProps = {
 export function EmptyState({ noun, search, onClearSearch, action }: EmptyStateProps) {
   if (search) {
     return (
-      <div className="rounded-md border border-dashed border-line-strong px-6 py-10 text-center">
+      <div className="rounded-md border border-dashed border-line px-6 py-10 text-center">
         <p className="font-medium">
           No {noun} match “{search}”.
         </p>
@@ -36,7 +36,7 @@ export function EmptyState({ noun, search, onClearSearch, action }: EmptyStatePr
   }
 
   return (
-    <div className="rounded-md border border-dashed border-line-strong px-6 py-10 text-center">
+    <div className="rounded-md border border-dashed border-line px-6 py-10 text-center">
       <p className="font-medium">No {noun} yet.</p>
       <p className="mt-1 text-ink-muted">They will appear here as soon as there are any.</p>
       {action ? <div className="mt-4">{action}</div> : null}

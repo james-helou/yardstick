@@ -28,7 +28,7 @@ export default function SignInPage() {
 
       <p className="text-sm text-ink-muted">
         No account yet?{" "}
-        <Link href="/sign-up" className="underline underline-offset-4">
+        <Link href="/sign-up" className="link">
           Create one
         </Link>
       </p>

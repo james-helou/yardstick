@@ -59,7 +59,10 @@ export default function Home() {
       </section>
 
       <nav>
-        <Link className="link text-xs text-ink-muted" href="/health">
+        <Link
+          className="link inline-flex min-h-11 items-center text-xs text-ink-muted"
+          href="/health"
+        >
           System health
         </Link>
       </nav>

@@ -27,7 +27,7 @@ async function Queue() {
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-md border border-dashed border-line-strong px-6 py-10 text-center">
+        <div className="rounded-md border border-dashed border-line px-6 py-10 text-center">
           <p className="font-medium">Every proposal has been answered.</p>
           <p className="mt-1 text-ink-muted">Send one and it shows up here the day it goes out.</p>
           <Link href="/proposals/new" className="btn btn-secondary btn-sm mt-4">
