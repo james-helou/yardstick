@@ -242,3 +242,34 @@ export async function findSignature(scope: OrgScope, proposalId: string): Promis
   `;
   return row ? toSignature(row) : null;
 }
+
+export type ViewStats = { views: number; lastViewedAt: Date | null };
+
+/**
+ * How often each of these proposals has been opened, and when it last was. One statement
+ * for the whole list: a follow-up queue that asked per proposal would issue a query per
+ * row, which is the shape that quietly turns a fast screen into a slow one.
+ */
+export async function viewStatsFor(
+  scope: OrgScope,
+  proposalIds: readonly string[],
+): Promise<Map<string, ViewStats>> {
+  const orgId = requireOrg(scope);
+  if (proposalIds.length === 0) return new Map();
+
+  const rows = await db()<{ proposal_id: string; views: string; last_viewed_at: Date }[]>`
+    select proposal_id, count(*) as views, max(created_at) as last_viewed_at
+      from proposal_events
+     where org_id = ${orgId}
+       and type = 'viewed'
+       and proposal_id = any(${db().array(proposalIds as string[])}::uuid[])
+     group by proposal_id
+  `;
+
+  return new Map(
+    rows.map((r) => [
+      r.proposal_id,
+      { views: Number(r.views), lastViewedAt: r.last_viewed_at ? new Date(r.last_viewed_at) : null },
+    ]),
+  );
+}

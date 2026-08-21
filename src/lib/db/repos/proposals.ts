@@ -429,3 +429,20 @@ export async function decideProposal(
   `;
   return row ? toProposal(row) : null;
 }
+
+/**
+ * Every proposal still waiting on an answer. Small by nature: a proposal leaves this list
+ * the moment it is accepted, declined or expired, so the follow-up queue reads a set that
+ * stays the size of a rep's actual pipeline.
+ */
+export async function listAwaitingAnswer(scope: OrgScope): Promise<Proposal[]> {
+  const orgId = requireOrg(scope);
+  const rows = await db()<Row[]>`
+    select p.*, b.name as business_name
+      from proposals p
+      left join businesses b on b.id = p.business_id and b.org_id = p.org_id
+     where p.org_id = ${orgId} and p.status = 'sent' and p.sent_at is not null
+     order by p.sent_at asc
+  `;
+  return rows.map(toProposal);
+}

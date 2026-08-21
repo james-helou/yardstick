@@ -117,6 +117,11 @@ test("a client opens the link with no login, signs, and the agency sees the sign
   // Nothing from the agency's side leaks onto the client's page.
   await expect(clientPage.getByRole("link", { name: "Proposals", exact: true })).toHaveCount(0);
 
+  // Opening it is what puts the deal at the top of the rep's morning.
+  await page.getByRole("link", { name: "Follow-ups" }).click();
+  await expect(page.getByText("Reading")).toBeVisible();
+  await expect(page.getByText("Call now. They have it open.")).toBeVisible();
+
   await clientPage.getByLabel("Your full name").fill("Ana Rivera");
   await clientPage.getByLabel("Email").fill("ana@rivera.example");
   await clientPage.getByRole("button", { name: "Accept and sign" }).click();
@@ -127,8 +132,13 @@ test("a client opens the link with no login, signs, and the agency sees the sign
   await expect(clientPage.getByRole("button", { name: "Accept and sign" })).toHaveCount(0);
   await client.close();
 
-  // And the agency sees who signed, that it was opened, and that the terms still match.
+  // Answered, so it leaves the queue: a rep is never told to chase a signed deal.
   await page.reload();
+  await expect(page.getByText("Nothing is waiting on an answer.")).toBeVisible();
+
+  // And the agency sees who signed, that it was opened, and that the terms still match.
+  await page.getByRole("link", { name: "Proposals", exact: true }).click();
+  await page.getByRole("link", { name: "Six months of local search" }).click();
   await expect(page.getByText("Ana Rivera (ana@rivera.example)")).toBeVisible();
   await expect(page.getByText("Still a match.")).toBeVisible();
   await expect(page.getByText(/Opened \d+ time/)).toBeVisible();
