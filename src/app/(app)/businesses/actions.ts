@@ -1,10 +1,18 @@
 "use server";
 
 import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { parseBusinessInput } from "@/lib/businesses/schema";
 import { resolveWorkspace } from "@/lib/auth/workspace";
 import { createBusiness, updateBusiness } from "@/lib/db/repos/businesses";
+import {
+  pauseSchedule,
+  resumeSchedule,
+  setSchedule,
+  stopSchedule,
+} from "@/lib/db/repos/schedules";
+import { isCadence } from "@/lib/tracking/cadence";
 import type { FormState } from "@/lib/forms/state";
 
 const DUPLICATE_LISTING = "23505";
@@ -56,4 +64,42 @@ export async function updateBusinessAction(
   if (!updated) return { errors: { form: "That business is not in this workspace" } };
 
   redirect(`/businesses/${id}`);
+}
+
+export async function setTrackingAction(formData: FormData): Promise<void> {
+  const { scope } = await resolveWorkspace(await headers());
+  const businessId = String(formData.get("businessId") ?? "");
+  const cadence = formData.get("cadence");
+  // A cadence nobody offers is not a schedule; ignore rather than invent one.
+  if (!businessId || !isCadence(cadence)) return;
+
+  await setSchedule(scope, { businessId, cadence });
+  revalidatePath(`/businesses/${businessId}`);
+}
+
+export async function pauseTrackingAction(formData: FormData): Promise<void> {
+  const { scope } = await resolveWorkspace(await headers());
+  const businessId = String(formData.get("businessId") ?? "");
+  if (!businessId) return;
+
+  await pauseSchedule(scope, businessId);
+  revalidatePath(`/businesses/${businessId}`);
+}
+
+export async function resumeTrackingAction(formData: FormData): Promise<void> {
+  const { scope } = await resolveWorkspace(await headers());
+  const businessId = String(formData.get("businessId") ?? "");
+  if (!businessId) return;
+
+  await resumeSchedule(scope, businessId);
+  revalidatePath(`/businesses/${businessId}`);
+}
+
+export async function stopTrackingAction(formData: FormData): Promise<void> {
+  const { scope } = await resolveWorkspace(await headers());
+  const businessId = String(formData.get("businessId") ?? "");
+  if (!businessId) return;
+
+  await stopSchedule(scope, businessId);
+  revalidatePath(`/businesses/${businessId}`);
 }

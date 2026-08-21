@@ -2,14 +2,23 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { ScoreBadge } from "@/components/scan";
+import { TrackingPanel, TrendPanel } from "@/components/tracking";
 import { resolveWorkspace } from "@/lib/auth/workspace";
 import { getBusiness } from "@/lib/db/repos/businesses";
+import { getSchedule } from "@/lib/db/repos/schedules";
 import { listScans, SCAN_LIST_SPEC, type ScanSort } from "@/lib/db/repos/scans";
+import { trendFor } from "@/lib/tracking/history";
 import { parseListQuery } from "@/lib/list/query";
 import { runScanAction } from "../../scans/actions";
 import { RunScanButton } from "../../scans/RunScanButton";
 import { SCAN_STATUS_LABEL } from "../../scans/page";
-import { updateBusinessAction } from "../actions";
+import {
+  pauseTrackingAction,
+  resumeTrackingAction,
+  setTrackingAction,
+  stopTrackingAction,
+  updateBusinessAction,
+} from "../actions";
 import { BusinessForm } from "../BusinessForm";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +40,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
     { businessId: business.id },
   );
 
+  const [schedule, trend] = await Promise.all([
+    getSchedule(scope, business.id),
+    trendFor(scope, business.id),
+  ]);
+
   const place = [business.addressLine, business.locality, business.region, business.postalCode, business.country]
     .filter(Boolean)
     .join(", ");
@@ -46,6 +60,21 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
           {STATUS_LABEL[business.status]}
           {place ? ` · ${place}` : ""}
         </p>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <TrendPanel trend={trend} title="Movement" />
+        <TrackingPanel
+          businessId={business.id}
+          cadence={schedule?.cadence ?? null}
+          nextRunAt={schedule?.nextRunAt ?? null}
+          lastRunAt={schedule?.lastRunAt ?? null}
+          paused={Boolean(schedule?.pausedAt)}
+          set={setTrackingAction}
+          pause={pauseTrackingAction}
+          resume={resumeTrackingAction}
+          stop={stopTrackingAction}
+        />
       </div>
 
       <div className="flex flex-col gap-3">

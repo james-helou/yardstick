@@ -311,3 +311,59 @@ export async function cachedPillarResult(
   `;
   return rows.length ? toPillarResult(rows[0]) : null;
 }
+
+/**
+ * Every finished measurement for one business, oldest first, which is the order a trend
+ * is read in. Only complete scans with a score: a failed scan is not a data point, it is
+ * a gap, and drawing it as a zero would tell a client their rankings collapsed.
+ */
+export async function scoreHistory(
+  scope: OrgScope,
+  businessId: string,
+  options: { limit?: number } = {},
+): Promise<{ scanId: string; at: Date; score: number }[]> {
+  const orgId = requireOrg(scope);
+  const limit = options.limit ?? 24;
+
+  const rows = await db()<{ id: string; at: Date; score: number }[]>`
+    select id, coalesce(finished_at, created_at) as at, score
+      from (
+        select id, finished_at, created_at, score
+          from scans
+         where org_id = ${orgId} and business_id = ${businessId}
+           and status = 'complete' and score is not null
+         order by coalesce(finished_at, created_at) desc
+         limit ${limit}
+      ) recent
+     order by coalesce(finished_at, created_at) asc
+  `;
+  return rows.map((r) => ({ scanId: r.id, at: new Date(r.at), score: Number(r.score) }));
+}
+
+/**
+ * The per-pillar score for each of these scans, latest result per pillar. One statement
+ * for the whole set: a trend that queried per scan would issue a query per point.
+ */
+export async function pillarScoresFor(
+  scope: OrgScope,
+  scanIds: readonly string[],
+): Promise<Map<string, Partial<Record<Pillar, number>>>> {
+  const orgId = requireOrg(scope);
+  if (scanIds.length === 0) return new Map();
+
+  const rows = await db()<{ scan_id: string; pillar: Pillar; score: number | null }[]>`
+    select distinct on (scan_id, pillar) scan_id, pillar, score
+      from pillar_results
+     where org_id = ${orgId} and scan_id = any(${db().array(scanIds as string[])}::uuid[])
+     order by scan_id, pillar, created_at desc, id desc
+  `;
+
+  const out = new Map<string, Partial<Record<Pillar, number>>>();
+  for (const row of rows) {
+    if (row.score === null) continue; // A pillar that could not run is not a zero.
+    const bucket = out.get(row.scan_id) ?? {};
+    bucket[row.pillar] = Number(row.score);
+    out.set(row.scan_id, bucket);
+  }
+  return out;
+}

@@ -9,10 +9,12 @@ import { migrate } from "../src/lib/db/migrate";
 import { handlers } from "../src/lib/jobs/handlers";
 import { reapStuckJobs } from "../src/lib/jobs/queue";
 import { runOnce } from "../src/lib/jobs/worker";
+import { sweepSchedules } from "../src/lib/tracking/run";
 
 const WORKER_ID = `${process.env.RAILWAY_SERVICE_NAME ?? "worker"}-${process.pid}`;
 const IDLE_SLEEP_MS = 2_000;
 const REAP_EVERY_MS = 60_000;
+const SWEEP_EVERY_MS = 60_000;
 const STUCK_AFTER_MS = 10 * 60_000;
 
 const controller = new AbortController();
@@ -40,6 +42,7 @@ async function main() {
 
   console.log(`[worker] ${WORKER_ID} started, ${Object.keys(handlers).length} handlers registered`);
   let lastReap = 0;
+  let lastSweep = 0;
 
   while (!controller.signal.aborted) {
     // A worker killed mid-job leaves its row in `running`. Nothing else will free it.
@@ -47,6 +50,16 @@ async function main() {
       lastReap = Date.now();
       const reaped = await reapStuckJobs({ olderThanMs: STUCK_AFTER_MS });
       if (reaped > 0) console.log(`[worker] reclaimed ${reaped} stuck job(s)`);
+    }
+
+    // Recurring measurement. The sweep claims by moving each schedule forward inside the
+    // transaction that selects it, so running two workers is safe.
+    if (Date.now() - lastSweep > SWEEP_EVERY_MS) {
+      lastSweep = Date.now();
+      const swept = await sweepSchedules();
+      if (swept.claimed > 0) {
+        console.log(`[worker] tracking: ${swept.started} started, ${swept.skipped} skipped`);
+      }
     }
 
     const result = await runOnce({
